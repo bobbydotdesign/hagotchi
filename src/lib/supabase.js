@@ -6,7 +6,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.en
 
 // Debug: Log what we're getting
 if (typeof window !== 'undefined') {
-  console.log('🔍 Supabase config check:', {
+  const debugInfo = {
     url: supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : '❌ MISSING',
     key: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 30)}...` : '❌ MISSING',
     hasUrl: !!supabaseUrl,
@@ -15,7 +15,10 @@ if (typeof window !== 'undefined') {
     mode: import.meta.env.MODE,
     dev: import.meta.env.DEV,
     prod: import.meta.env.PROD
-  })
+  }
+  console.log('🔍 Supabase config check:', debugInfo)
+  console.log('Full URL:', supabaseUrl)
+  console.log('Full Key (first 50 chars):', supabaseAnonKey ? supabaseAnonKey.substring(0, 50) : 'MISSING')
 }
 
 if (!supabaseUrl || !supabaseAnonKey) {
