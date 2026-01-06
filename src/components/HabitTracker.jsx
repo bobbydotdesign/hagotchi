@@ -1,9 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
+const HABITS_CACHE_KEY = 'habito_habits_cache';
+
 const HabitTracker = () => {
+  // Load cached habits immediately for faster perceived load
   const [user, setUser] = useState(null);
-  const [habits, setHabits] = useState([]);
+  const [habits, setHabits] = useState(() => {
+    try {
+      const cached = localStorage.getItem(HABITS_CACHE_KEY);
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -123,23 +131,40 @@ const HabitTracker = () => {
         setShowPasswordReset(true);
       }
 
-      // Fetch habits if user exists (with timeout to prevent hanging)
+      // Fetch habits if user exists
       if (session?.user) {
+        // If we have cached habits, show them and stop loading immediately
+        const cached = localStorage.getItem(HABITS_CACHE_KEY);
+        if (cached) {
+          try {
+            setHabits(JSON.parse(cached));
+            setLoading(false);
+          } catch {}
+        }
+
+        // Fetch fresh data in background (with 30s timeout)
         try {
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Fetch timeout')), 10000)
+            setTimeout(() => reject(new Error('Fetch timeout - check your connection')), 30000)
           );
           const data = await Promise.race([
             fetchHabits(session.user.id),
             timeoutPromise
           ]);
           setHabits(data);
+          // Cache the fresh data
+          localStorage.setItem(HABITS_CACHE_KEY, JSON.stringify(data));
+          setFetchError(null);
         } catch (err) {
           console.error('Error fetching habits:', err);
-          setFetchError(err.message || 'Failed to load habits');
+          // Only show error if we don't have cached data
+          if (!cached) {
+            setFetchError(err.message || 'Failed to load habits');
+          }
         }
       } else {
         setHabits([]);
+        localStorage.removeItem(HABITS_CACHE_KEY);
       }
 
       setLoading(false);
@@ -200,6 +225,13 @@ const HabitTracker = () => {
       }
     };
   }, [user]);
+
+  // Cache habits whenever they change (for faster loads)
+  useEffect(() => {
+    if (habits.length > 0 && user) {
+      localStorage.setItem(HABITS_CACHE_KEY, JSON.stringify(habits));
+    }
+  }, [habits, user]);
 
   useEffect(() => {
     const blinkInterval = setInterval(() => {
