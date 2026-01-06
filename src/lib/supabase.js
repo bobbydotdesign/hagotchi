@@ -35,18 +35,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Supabase configuration is missing. Check Vercel environment variables.')
 }
 
+// Realtime is not configured to avoid WebSocket connection errors
+// The app works fine without realtime - updates happen on page refresh/actions
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true
-  },
-  realtime: {
-    // Suppress WebSocket connection errors in console
-    // The app will work fine without realtime, just without live updates
-    params: {
-      eventsPerSecond: 10
-    }
   }
 })
 

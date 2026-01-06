@@ -107,7 +107,20 @@ const HabitTracker = () => {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email || 'no user');
+      
       setUser(session?.user ?? null);
+      
+      // Handle sign out explicitly
+      if (event === 'SIGNED_OUT') {
+        setHabits([]);
+        setUser(null);
+        setShowAddModal(false);
+        setShowPasswordReset(false);
+        setShowSettings(false);
+        setLoading(false);
+        return;
+      }
       
       // Handle password recovery flow
       if (event === 'PASSWORD_RECOVERY' || event === 'TOKEN_REFRESHED') {
@@ -130,7 +143,10 @@ const HabitTracker = () => {
     return () => subscription.unsubscribe();
   }, [fetchHabits]);
 
-  // Real-time subscription for habit changes
+  // Real-time subscription disabled to prevent WebSocket errors
+  // The app works fine without realtime - habits update on page refresh/actions
+  // If you want to re-enable realtime, uncomment the code below and enable it in Supabase dashboard
+  /*
   useEffect(() => {
     if (!user) return;
 
@@ -159,19 +175,16 @@ const HabitTracker = () => {
         )
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
-            // Successfully subscribed - realtime is working
             if (import.meta.env.DEV) {
               console.log('✅ Realtime subscription active');
             }
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            // Realtime failed - app will still work, just without live updates
             if (import.meta.env.DEV) {
-              console.warn('⚠️ Realtime subscription failed - app will work without live updates');
+              console.warn('⚠️ Realtime subscription failed');
             }
           }
         });
     } catch (error) {
-      // Gracefully handle subscription errors
       if (import.meta.env.DEV) {
         console.warn('⚠️ Could not establish realtime connection:', error.message);
       }
@@ -187,6 +200,7 @@ const HabitTracker = () => {
       }
     };
   }, [user]);
+  */
 
   useEffect(() => {
     const blinkInterval = setInterval(() => {
@@ -493,21 +507,33 @@ const HabitTracker = () => {
   };
 
   const signOut = async () => {
+    console.log('Sign out called');
+    
+    // Clear modals and state immediately
+    setShowAddModal(false);
+    setShowPasswordReset(false);
+    setShowSettings(false);
+    setHabits([]);
+    setUser(null);
+    
     try {
+      // Sign out from Supabase - this will trigger the SIGNED_OUT event
       const { error } = await supabase.auth.signOut();
+      
+      console.log('Sign out result:', error ? 'error' : 'success', error);
+      
       if (error) {
         console.error('Sign out error:', error);
-        // Still clear local state even if sign out fails
+        // State already cleared above, but ensure it stays cleared
+        setHabits([]);
+        setUser(null);
       }
-      setHabits([]);
-      setUser(null);
-      // Clear any modals
-      setShowAddModal(false);
-      setShowPasswordReset(false);
-      setShowSettings(false);
+      // If successful, the auth state change listener will also handle it
+      // but we've already cleared state above as a safeguard
+      
     } catch (err) {
       console.error('Failed to sign out:', err);
-      // Force clear local state
+      // Ensure state is cleared even on error
       setHabits([]);
       setUser(null);
     }
@@ -984,7 +1010,11 @@ const HabitTracker = () => {
                 [SETTINGS]
               </button>
               <button
-                onClick={signOut}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  signOut();
+                }}
                 style={{
                   background: 'transparent',
                   border: '1px solid #333',
@@ -1575,7 +1605,9 @@ const HabitTracker = () => {
 
               {/* Logout Button */}
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   setShowSettings(false);
                   signOut();
                 }}
