@@ -14,10 +14,11 @@ const HabitTracker = () => {
   const [syncing, setSyncing] = useState(false);
 
   const bootMessages = [
-    '> HABIT_OS v2.4.1 initializing...',
+    '> HABIT_OS v2.5.0 initializing...',
     '> loading neural pathways.......... OK',
     '> scanning habit matrix............ OK', 
     '> streak engine online............. OK',
+    '> cloud sync enabled............... OK',
     '> welcome back, operator.',
     ''
   ];
@@ -445,7 +446,7 @@ const HabitTracker = () => {
             fontSize: '10px',
             color: '#333'
           }}>
-            HABIT_OS v2.4.1 • consistency compounds
+            HABIT_OS v2.5.0 • consistency compounds
           </div>
         </div>
 
@@ -941,7 +942,7 @@ const HabitTracker = () => {
           display: 'flex',
           justifyContent: 'space-between'
         }}>
-          <span>HABIT_OS v2.4.1</span>
+          <span>HABIT_OS v2.5.0</span>
           <span>consistency compounds</span>
         </div>
       </div>
