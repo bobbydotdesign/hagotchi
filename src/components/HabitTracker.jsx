@@ -59,17 +59,12 @@ const HabitTracker = () => {
 
   // Fetch habits from Supabase
   const fetchHabits = useCallback(async (userId) => {
-    console.log('fetchHabits: starting for user', userId);
     setFetchError(null);
-
-    const startTime = Date.now();
     const { data, error } = await supabase
       .from('habits')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
-
-    console.log('fetchHabits: completed in', Date.now() - startTime, 'ms', { data: data?.length, error });
 
     if (error) {
       console.error('Error fetching habits:', error);
@@ -116,7 +111,6 @@ const HabitTracker = () => {
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event:', event, session?.user?.email || 'no user');
 
       // Update user state
       setUser(session?.user ?? null);
