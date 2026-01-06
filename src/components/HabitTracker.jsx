@@ -95,8 +95,14 @@ const HabitTracker = () => {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
+      
+      // Handle password recovery flow
+      if (event === 'PASSWORD_RECOVERY') {
+        setShowPasswordReset(true);
+      }
+      
       if (session?.user) {
         const data = await fetchHabits(session.user.id);
         setHabits(data);
@@ -159,10 +165,71 @@ const HabitTracker = () => {
   }, [bootLine, bootSequence]);
 
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [authMessage, setAuthMessage] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [authMode, setAuthMode] = useState('signin'); // 'signin', 'signup', 'magic'
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
 
-  const signInWithEmail = async () => {
+  const signInWithPassword = async () => {
+    if (!email.trim() || !password.trim()) return;
+    
+    setAuthLoading(true);
+    setAuthMessage('');
+    
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim()
+      });
+      
+      if (error) {
+        console.error('Sign in error:', error);
+        setAuthMessage(`Error: ${error.message}`);
+      }
+    } catch (err) {
+      console.error('Failed to fetch:', err);
+      setAuthMessage('Connection error. Please check your internet connection and try again.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const signUpWithPassword = async () => {
+    if (!email.trim() || !password.trim()) return;
+    if (password.length < 6) {
+      setAuthMessage('Error: Password must be at least 6 characters');
+      return;
+    }
+    
+    setAuthLoading(true);
+    setAuthMessage('');
+    
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password.trim(),
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      });
+      
+      if (error) {
+        console.error('Sign up error:', error);
+        setAuthMessage(`Error: ${error.message}`);
+      } else {
+        setAuthMessage('Check your email to confirm your account!');
+      }
+    } catch (err) {
+      console.error('Failed to fetch:', err);
+      setAuthMessage('Connection error. Please check your internet connection and try again.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const signInWithMagicLink = async () => {
     if (!email.trim()) return;
     
     setAuthLoading(true);
@@ -185,6 +252,91 @@ const HabitTracker = () => {
     } catch (err) {
       console.error('Failed to fetch:', err);
       setAuthMessage('Connection error. Please check your internet connection and try again.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleAuthSubmit = () => {
+    if (authMode === 'magic') {
+      signInWithMagicLink();
+    } else if (authMode === 'signup') {
+      signUpWithPassword();
+    } else {
+      signInWithPassword();
+    }
+  };
+
+  const sendPasswordReset = async () => {
+    if (!email.trim()) {
+      setAuthMessage('Error: Please enter your email first');
+      return;
+    }
+    
+    setAuthLoading(true);
+    setAuthMessage('');
+    
+    try {
+      // Use the full URL with protocol for redirect
+      const redirectUrl = `${window.location.protocol}//${window.location.host}`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: redirectUrl
+      });
+      
+      if (error) {
+        console.error('Password reset error:', error);
+        // Provide more helpful error messages
+        if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('Network') || error.message.includes('fetch'))) {
+          setAuthMessage(`Network error. Check your connection and Supabase redirect URL settings. Add ${redirectUrl} to allowed URLs in Supabase dashboard.`);
+        } else {
+          setAuthMessage(`Error: ${error.message}`);
+        }
+      } else {
+        setAuthMessage('Check your email for the password reset link!');
+      }
+    } catch (err) {
+      console.error('Failed to fetch:', err);
+      const redirectUrl = `${window.location.protocol}//${window.location.host}`;
+      if (err.message && err.message.includes('Failed to fetch')) {
+        setAuthMessage(`Network error. Check connection and Supabase settings. Add ${redirectUrl} to allowed redirect URLs in Supabase dashboard → Authentication.`);
+      } else {
+        setAuthMessage(`Error: ${err.message || 'Connection error. Please try again.'}`);
+      }
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const updatePassword = async () => {
+    if (!newPassword.trim()) {
+      setAuthMessage('Error: Please enter a new password');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setAuthMessage('Error: Password must be at least 6 characters');
+      return;
+    }
+    
+    setAuthLoading(true);
+    setAuthMessage('');
+    
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword.trim()
+      });
+      
+      if (error) {
+        console.error('Password update error:', error);
+        setAuthMessage(`Error: ${error.message}`);
+      } else {
+        setAuthMessage('Password updated successfully!');
+        setShowPasswordReset(false);
+        setNewPassword('');
+      }
+    } catch (err) {
+      console.error('Failed to update password:', err);
+      setAuthMessage('Connection error. Please try again.');
     } finally {
       setAuthLoading(false);
     }
@@ -380,16 +532,56 @@ const HabitTracker = () => {
               fontSize: '12px',
               letterSpacing: '1px'
             }}>
-              &gt; AUTHENTICATION REQUIRED{cursorBlink ? '▌' : ' '}
+              &gt; {authMode === 'signup' ? 'CREATE ACCOUNT' : authMode === 'magic' ? 'MAGIC LINK' : 'SIGN IN'}{cursorBlink ? '▌' : ' '}
+            </div>
+
+            {/* Auth mode tabs */}
+            <div style={{
+              display: 'flex',
+              gap: '4px',
+              marginBottom: '20px',
+              fontSize: '10px'
+            }}>
+              {[
+                { key: 'signin', label: 'PASSWORD' },
+                { key: 'signup', label: 'SIGN UP' },
+                { key: 'magic', label: 'MAGIC LINK' }
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => {
+                    setAuthMode(key);
+                    setAuthMessage('');
+                  }}
+                  style={{
+                    flex: 1,
+                    background: authMode === key ? '#1a1a1a' : 'transparent',
+                    border: '1px solid #333',
+                    borderBottom: authMode === key ? '1px solid #0d0d0d' : '1px solid #333',
+                    color: authMode === key ? '#00ff41' : '#666',
+                    padding: '6px 8px',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    letterSpacing: '0.5px',
+                    marginBottom: '-1px'
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
             <div style={{
               color: '#666',
               fontSize: '11px',
-              marginBottom: '24px',
+              marginBottom: '20px',
               lineHeight: '1.6'
             }}>
-              enter your email to receive a magic login link
+              {authMode === 'magic' 
+                ? 'enter your email to receive a magic login link'
+                : authMode === 'signup'
+                ? 'create a new account with email & password'
+                : 'sign in with your email & password'}
             </div>
 
             <input
@@ -408,13 +600,37 @@ const HabitTracker = () => {
                 marginBottom: '12px',
                 outline: 'none'
               }}
-              onKeyDown={(e) => e.key === 'Enter' && signInWithEmail()}
+              onKeyDown={(e) => e.key === 'Enter' && (authMode === 'magic' ? handleAuthSubmit() : document.getElementById('password-input')?.focus())}
               onFocus={(e) => e.target.style.borderColor = '#00ff41'}
               onBlur={(e) => e.target.style.borderColor = '#333'}
             />
 
+            {authMode !== 'magic' && (
+              <input
+                id="password-input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="password"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  backgroundColor: '#0a0a0a',
+                  border: '1px solid #333',
+                  color: '#fff',
+                  fontFamily: 'inherit',
+                  fontSize: '14px',
+                  marginBottom: '12px',
+                  outline: 'none'
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && handleAuthSubmit()}
+                onFocus={(e) => e.target.style.borderColor = '#00ff41'}
+                onBlur={(e) => e.target.style.borderColor = '#333'}
+              />
+            )}
+
             <button
-              onClick={signInWithEmail}
+              onClick={handleAuthSubmit}
               disabled={authLoading}
               style={{
                 width: '100%',
@@ -430,8 +646,44 @@ const HabitTracker = () => {
                 transition: 'all 0.15s'
               }}
             >
-              {authLoading ? '[SENDING...]' : '[SEND MAGIC LINK]'}
+              {authLoading 
+                ? '[PROCESSING...]' 
+                : authMode === 'magic' 
+                ? '[SEND MAGIC LINK]' 
+                : authMode === 'signup'
+                ? '[CREATE ACCOUNT]'
+                : '[SIGN IN]'}
             </button>
+
+            {authMode === 'signin' && (
+              <button
+                onClick={sendPasswordReset}
+                disabled={authLoading}
+                style={{
+                  width: '100%',
+                  marginTop: '12px',
+                  padding: '10px',
+                  backgroundColor: 'transparent',
+                  border: '1px solid #333',
+                  color: '#666',
+                  cursor: authLoading ? 'wait' : 'pointer',
+                  fontFamily: 'inherit',
+                  fontSize: '11px',
+                  letterSpacing: '0.5px',
+                  transition: 'all 0.15s'
+                }}
+                onMouseEnter={e => {
+                  e.target.style.borderColor = '#00ff41';
+                  e.target.style.color = '#00ff41';
+                }}
+                onMouseLeave={e => {
+                  e.target.style.borderColor = '#333';
+                  e.target.style.color = '#666';
+                }}
+              >
+                set/reset password
+              </button>
+            )}
 
             {authMessage && (
               <div style={{
@@ -441,7 +693,9 @@ const HabitTracker = () => {
                 border: `1px solid ${authMessage.includes('Error') ? '#ff4444' : '#00ff41'}`,
                 color: authMessage.includes('Error') ? '#ff4444' : '#00ff41',
                 fontSize: '11px',
-                textAlign: 'center'
+                textAlign: 'center',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word'
               }}>
                 {authMessage}
               </div>
@@ -840,6 +1094,126 @@ const HabitTracker = () => {
                     ? Math.round(habits.reduce((acc, h) => acc + (h.history || []).filter(d => d).length, 0) / (habits.length * 7) * 100)
                     : 0}%
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Password Reset Modal */}
+        {showPasswordReset && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000
+          }}>
+            <div style={{
+              backgroundColor: '#0d0d0d',
+              border: '1px solid #333',
+              padding: '24px',
+              width: '90%',
+              maxWidth: '400px'
+            }}>
+              <div style={{ 
+                color: '#00ff41', 
+                marginBottom: '16px',
+                fontSize: '12px',
+                letterSpacing: '1px'
+              }}>
+                &gt; SET NEW PASSWORD{cursorBlink ? '▌' : ' '}
+              </div>
+              
+              <div style={{
+                color: '#666',
+                fontSize: '11px',
+                marginBottom: '20px',
+                lineHeight: '1.6'
+              }}>
+                enter your new password (min 6 characters)
+              </div>
+              
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="new password"
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  backgroundColor: '#0a0a0a',
+                  border: '1px solid #333',
+                  color: '#fff',
+                  fontFamily: 'inherit',
+                  fontSize: '14px',
+                  marginBottom: '16px',
+                  outline: 'none'
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && updatePassword()}
+                onFocus={(e) => e.target.style.borderColor = '#00ff41'}
+                onBlur={(e) => e.target.style.borderColor = '#333'}
+              />
+              
+              {authMessage && (
+                <div style={{
+                  marginBottom: '16px',
+                  padding: '12px',
+                  backgroundColor: authMessage.includes('Error') ? 'rgba(255,0,0,0.1)' : 'rgba(0,255,65,0.1)',
+                  border: `1px solid ${authMessage.includes('Error') ? '#ff4444' : '#00ff41'}`,
+                  color: authMessage.includes('Error') ? '#ff4444' : '#00ff41',
+                  fontSize: '11px',
+                  textAlign: 'center'
+                }}>
+                  {authMessage}
+                </div>
+              )}
+              
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={updatePassword}
+                  disabled={authLoading}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    backgroundColor: '#00ff41',
+                    border: 'none',
+                    color: '#000',
+                    cursor: authLoading ? 'wait' : 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    letterSpacing: '1px',
+                    opacity: authLoading ? 0.7 : 1
+                  }}
+                >
+                  {authLoading ? '[SAVING...]' : '[SET PASSWORD]'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPasswordReset(false);
+                    setNewPassword('');
+                    setAuthMessage('');
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    backgroundColor: 'transparent',
+                    border: '1px solid #444',
+                    color: '#666',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: '11px',
+                    letterSpacing: '1px'
+                  }}
+                >
+                  [SKIP]
+                </button>
               </div>
             </div>
           </div>
