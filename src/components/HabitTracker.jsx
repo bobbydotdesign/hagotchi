@@ -25,6 +25,15 @@ const HabitTracker = () => {
   const [newHabitGoal, setNewHabitGoal] = useState(1);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
 
+  // Swipe gesture state for native mobile feel
+  const [swipeState, setSwipeState] = useState({});
+  const [activeSwipe, setActiveSwipe] = useState(null);
+  const [completedAnimation, setCompletedAnimation] = useState(null);
+  const swipeStartRef = useRef({ x: 0, y: 0, time: 0 });
+  const [showMobileHint, setShowMobileHint] = useState(() => {
+    return !localStorage.getItem('habito_mobile_hint_seen');
+  });
+
   // Handle responsive layout
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 600);
@@ -665,6 +674,83 @@ const HabitTracker = () => {
     setSyncing(false);
   };
 
+  // Swipe gesture handlers for native mobile experience
+  const SWIPE_THRESHOLD = 80;
+  const SWIPE_VELOCITY_THRESHOLD = 0.3;
+
+  const handleTouchStart = (e, habitId) => {
+    if (!isMobile) return;
+    const touch = e.touches[0];
+    swipeStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now()
+    };
+    setActiveSwipe(habitId);
+    setSwipeState(prev => ({ ...prev, [habitId]: 0 }));
+  };
+
+  const handleTouchMove = (e, habitId) => {
+    if (!isMobile || activeSwipe !== habitId) return;
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - swipeStartRef.current.x;
+    const deltaY = touch.clientY - swipeStartRef.current.y;
+
+    // Only track horizontal swipes (ignore vertical scrolling)
+    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaX) < 10) return;
+
+    // Prevent vertical scroll during horizontal swipe
+    if (Math.abs(deltaX) > 10) {
+      e.preventDefault();
+    }
+
+    // Limit swipe range with resistance at edges
+    const maxSwipe = 120;
+    const clampedX = Math.max(-maxSwipe, Math.min(maxSwipe, deltaX));
+    setSwipeState(prev => ({ ...prev, [habitId]: clampedX }));
+  };
+
+  const handleTouchEnd = (habitId) => {
+    if (!isMobile || activeSwipe !== habitId) return;
+
+    const swipeX = swipeState[habitId] || 0;
+    const elapsed = Date.now() - swipeStartRef.current.time;
+    const velocity = Math.abs(swipeX) / elapsed;
+
+    // Check if swipe meets threshold (distance or velocity)
+    const isValidSwipe = Math.abs(swipeX) > SWIPE_THRESHOLD || velocity > SWIPE_VELOCITY_THRESHOLD;
+
+    if (isValidSwipe) {
+      if (swipeX > SWIPE_THRESHOLD || (swipeX > 30 && velocity > SWIPE_VELOCITY_THRESHOLD)) {
+        // Swipe right - toggle completion
+        setCompletedAnimation(habitId);
+        setTimeout(() => setCompletedAnimation(null), 300);
+        incrementHabit(habitId);
+      } else if (swipeX < -SWIPE_THRESHOLD || (swipeX < -30 && velocity > SWIPE_VELOCITY_THRESHOLD)) {
+        // Swipe left - delete (with confirmation)
+        setConfirmingDeleteId(habitId);
+      }
+    }
+
+    // Reset swipe state with animation
+    setSwipeState(prev => ({ ...prev, [habitId]: 0 }));
+    setActiveSwipe(null);
+  };
+
+  // Tap handler for quick completion toggle
+  const handleTap = (habitId) => {
+    if (!isMobile) return;
+    setCompletedAnimation(habitId);
+    setTimeout(() => setCompletedAnimation(null), 200);
+    incrementHabit(habitId);
+  };
+
+  // Dismiss mobile hint
+  const dismissMobileHint = () => {
+    localStorage.setItem('habito_mobile_hint_seen', 'true');
+    setShowMobileHint(false);
+  };
+
   const completedCount = habits.filter(h => h.completed_today).length;
   const completionPercent = habits.length > 0 ? Math.round((completedCount / habits.length) * 100) : 0;
 
@@ -1263,130 +1349,236 @@ const HabitTracker = () => {
               no habits tracked. add one below.
             </div>
           ) : (
-            habits.map((habit, index) => (
+            <>
+              {/* Mobile swipe hint */}
+              {isMobile && showMobileHint && habits.length > 0 && (
+                <div
+                  onClick={dismissMobileHint}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '12px',
+                    padding: '12px 16px',
+                    backgroundColor: 'rgba(0,255,65,0.05)',
+                    borderBottom: '1px solid #222',
+                    fontSize: '12px',
+                    color: '#666',
+                    cursor: 'pointer',
+                    animation: 'fadeIn 0.3s ease-out'
+                  }}
+                >
+                  <span style={{ color: '#00ff41' }}>←</span>
+                  <span>tap to complete • swipe left to delete</span>
+                  <span style={{ color: '#ff4444' }}>→</span>
+                  <span style={{
+                    marginLeft: '8px',
+                    color: '#444',
+                    fontSize: '10px'
+                  }}>
+                    (tap to dismiss)
+                  </span>
+                </div>
+              )}
+              {habits.map((habit, index) => (
               <div
                 key={habit.id}
                 style={{
-                  padding: isMobile ? '10px 12px' : '12px',
-                  borderBottom: index < habits.length - 1 ? '1px solid #222' : 'none',
-                  transition: 'background 0.15s',
-                  backgroundColor: habit.completed_today ? 'rgba(0,255,65,0.03)' : 'transparent'
+                  position: 'relative',
+                  overflow: 'hidden',
+                  borderBottom: index < habits.length - 1 ? '1px solid #222' : 'none'
                 }}
               >
                 {isMobile ? (
-                  /* Mobile: Two-row layout */
+                  /* Mobile: Native single-row swipeable layout */
                   <>
-                    {/* Top row: Info items */}
+                    {/* Swipe action backgrounds */}
                     <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
                       display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      marginBottom: '8px'
+                      pointerEvents: 'none'
                     }}>
-                      <span style={{
-                        fontSize: '16px',
-                        color: habit.completed_today ? '#00ff41' : '#444',
-                        textShadow: habit.completed_today ? '0 0 8px #00ff41' : 'none'
+                      {/* Complete action (green, left side - revealed on swipe right) */}
+                      <div style={{
+                        flex: 1,
+                        background: `linear-gradient(90deg, rgba(0,255,65,${Math.min(0.3, Math.abs((swipeState[habit.id] || 0) / 200))}) 0%, transparent 100%)`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        paddingLeft: '16px',
+                        color: '#00ff41',
+                        fontSize: '18px',
+                        opacity: (swipeState[habit.id] || 0) > 20 ? 1 : 0,
+                        transition: 'opacity 0.1s'
                       }}>
-                        {habit.icon}
-                      </span>
+                        ✓
+                      </div>
+                      {/* Delete action (red, right side - revealed on swipe left) */}
+                      <div style={{
+                        flex: 1,
+                        background: `linear-gradient(270deg, rgba(255,68,68,${Math.min(0.3, Math.abs((swipeState[habit.id] || 0) / 200))}) 0%, transparent 100%)`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        paddingRight: '16px',
+                        color: '#ff4444',
+                        fontSize: '18px',
+                        opacity: (swipeState[habit.id] || 0) < -20 ? 1 : 0,
+                        transition: 'opacity 0.1s'
+                      }}>
+                        ✕
+                      </div>
+                    </div>
+
+                    {/* Swipeable habit row */}
+                    <div
+                      onTouchStart={(e) => handleTouchStart(e, habit.id)}
+                      onTouchMove={(e) => handleTouchMove(e, habit.id)}
+                      onTouchEnd={() => handleTouchEnd(habit.id)}
+                      onClick={() => !activeSwipe && handleTap(habit.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '14px 16px',
+                        gap: '12px',
+                        transform: `translateX(${swipeState[habit.id] || 0}px)`,
+                        transition: activeSwipe === habit.id ? 'none' : 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                        backgroundColor: completedAnimation === habit.id
+                          ? 'rgba(0,255,65,0.15)'
+                          : habit.completed_today
+                            ? 'rgba(0,255,65,0.03)'
+                            : '#0a0a0a',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        WebkitTapHighlightColor: 'transparent',
+                        position: 'relative',
+                        zIndex: 1
+                      }}
+                    >
+                      {/* Completion indicator + Icon */}
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        border: `2px solid ${habit.completed_today ? '#00ff41' : '#333'}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: habit.completed_today ? 'rgba(0,255,65,0.1)' : 'transparent',
+                        transition: 'all 0.2s',
+                        flexShrink: 0,
+                        transform: completedAnimation === habit.id ? 'scale(1.1)' : 'scale(1)'
+                      }}>
+                        <span style={{
+                          fontSize: '14px',
+                          color: habit.completed_today ? '#00ff41' : '#555',
+                          textShadow: habit.completed_today ? '0 0 6px #00ff41' : 'none'
+                        }}>
+                          {habit.completed_today ? '✓' : habit.icon}
+                        </span>
+                      </div>
+
+                      {/* Habit name */}
                       <span style={{
-                        color: habit.completed_today ? '#00ff41' : '#888',
-                        fontSize: '13px',
-                        flex: 1
+                        flex: 1,
+                        color: habit.completed_today ? '#00ff41' : '#aaa',
+                        fontSize: '15px',
+                        fontWeight: habit.completed_today ? '500' : '400',
+                        textDecoration: habit.completed_today ? 'line-through' : 'none',
+                        textDecorationColor: 'rgba(0,255,65,0.4)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
                       }}>
                         {habit.name}
                       </span>
-                      <div style={{ display: 'flex', gap: '3px' }}>
-                        {Array.from({ length: habit.daily_goal || 1 }).map((_, i) => (
-                          <span
-                            key={i}
-                            style={{
-                              fontSize: '10px',
-                              color: i < (habit.completions_today || 0) ? '#00ff41' : '#555',
-                              textShadow: i < (habit.completions_today || 0) ? '0 0 4px #00ff41' : 'none'
-                            }}
-                          >
-                            {i < (habit.completions_today || 0) ? '●' : '○'}
-                          </span>
-                        ))}
-                      </div>
+
+                      {/* Progress bar (replaces dots for multi-goal habits) */}
+                      {(habit.daily_goal || 1) > 1 && (
+                        <div style={{
+                          width: '40px',
+                          height: '4px',
+                          backgroundColor: '#222',
+                          borderRadius: '2px',
+                          overflow: 'hidden',
+                          flexShrink: 0
+                        }}>
+                          <div style={{
+                            width: `${((habit.completions_today || 0) / (habit.daily_goal || 1)) * 100}%`,
+                            height: '100%',
+                            backgroundColor: habit.completed_today ? '#00ff41' : '#666',
+                            borderRadius: '2px',
+                            transition: 'width 0.2s, background-color 0.2s'
+                          }} />
+                        </div>
+                      )}
+
+                      {/* Streak */}
                       <span style={{
-                        color: habit.streak > 7 ? '#00ff41' : habit.streak > 3 ? '#ffaa00' : '#666',
-                        fontSize: '11px',
-                        minWidth: '35px',
-                        textAlign: 'right'
+                        color: habit.streak > 7 ? '#00ff41' : habit.streak > 3 ? '#ffaa00' : '#555',
+                        fontSize: '13px',
+                        minWidth: '30px',
+                        textAlign: 'right',
+                        flexShrink: 0
                       }}>
-                        {habit.streak > 0 ? `${habit.streak}🔥` : '---'}
+                        {habit.streak > 0 ? `${habit.streak}🔥` : ''}
                       </span>
                     </div>
-                    {/* Bottom row: Action items */}
-                    <div style={{
-                      display: 'flex',
-                      gap: '8px',
-                      paddingLeft: '24px'
-                    }}>
-                      {confirmingDeleteId === habit.id ? (
+
+                    {/* Delete confirmation overlay */}
+                    {confirmingDeleteId === habit.id && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(10,10,10,0.95)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '12px',
+                        zIndex: 10,
+                        animation: 'fadeIn 0.15s ease-out'
+                      }}>
+                        <button
+                          onClick={() => setConfirmingDeleteId(null)}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid #444',
+                            color: '#888',
+                            padding: '10px 20px',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            fontSize: '12px',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          Cancel
+                        </button>
                         <button
                           onClick={() => {
                             deleteHabit(habit.id);
                             setConfirmingDeleteId(null);
                           }}
                           style={{
-                            background: 'transparent',
+                            background: 'rgba(255,68,68,0.1)',
                             border: '1px solid #ff4444',
                             color: '#ff4444',
-                            padding: '8px 16px',
+                            padding: '10px 20px',
                             cursor: 'pointer',
                             fontFamily: 'inherit',
-                            fontSize: '10px',
-                            transition: 'all 0.15s',
-                            minHeight: '36px'
+                            fontSize: '12px',
+                            borderRadius: '4px'
                           }}
                         >
-                          [CONFIRM DELETE]
+                          Delete
                         </button>
-                      ) : (
-                        <button
-                          onClick={() => incrementHabit(habit.id)}
-                          style={{
-                            background: 'transparent',
-                            border: `1px solid ${habit.completed_today ? '#00ff41' : '#444'}`,
-                            color: habit.completed_today ? '#00ff41' : '#666',
-                            padding: '8px 16px',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            fontSize: '10px',
-                            transition: 'all 0.15s',
-                            minHeight: '36px'
-                          }}
-                        >
-                          {habit.completed_today ? '[DONE]' : '[    ]'}
-                        </button>
-                      )}
-                      <button
-                        onClick={() => {
-                          if (confirmingDeleteId === habit.id) {
-                            setConfirmingDeleteId(null);
-                          } else {
-                            setConfirmingDeleteId(habit.id);
-                          }
-                        }}
-                        style={{
-                          background: 'transparent',
-                          border: '1px solid #333',
-                          color: confirmingDeleteId === habit.id ? '#ff4444' : '#666',
-                          cursor: 'pointer',
-                          fontFamily: 'inherit',
-                          fontSize: '10px',
-                          padding: '8px 12px',
-                          transition: 'all 0.15s',
-                          minHeight: '36px'
-                        }}
-                      >
-                        {confirmingDeleteId === habit.id ? '[CANCEL]' : '[DEL]'}
-                      </button>
-                    </div>
+                      </div>
+                    )}
                   </>
                 ) : (
                   /* Desktop: Single-row grid layout */
@@ -1394,7 +1586,10 @@ const HabitTracker = () => {
                     display: 'grid',
                     gridTemplateColumns: selectedView === 'week' ? '30px 1fr 40px 140px 76px 30px' : '30px 1fr 40px 80px 76px 30px',
                     gap: '8px',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    padding: '12px',
+                    backgroundColor: habit.completed_today ? 'rgba(0,255,65,0.03)' : 'transparent',
+                    transition: 'background 0.15s'
                   }}>
                     <span style={{
                       fontSize: '16px',
@@ -1516,7 +1711,8 @@ const HabitTracker = () => {
                   </div>
                 )}
               </div>
-            ))
+            ))}
+            </>
           )}
         </div>
 
@@ -2035,7 +2231,17 @@ const HabitTracker = () => {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
         }
-        
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes scaleIn {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+
         * {
           box-sizing: border-box;
         }
