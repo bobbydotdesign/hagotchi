@@ -168,19 +168,26 @@ const HabitTracker = () => {
     setAuthLoading(true);
     setAuthMessage('');
     
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        emailRedirectTo: window.location.origin
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      });
+      
+      if (error) {
+        console.error('Sign in error:', error);
+        setAuthMessage(`Error: ${error.message}`);
+      } else {
+        setAuthMessage('Check your email for the login link!');
       }
-    });
-    
-    if (error) {
-      setAuthMessage(`Error: ${error.message}`);
-    } else {
-      setAuthMessage('Check your email for the login link!');
+    } catch (err) {
+      console.error('Failed to fetch:', err);
+      setAuthMessage('Connection error. Please check your internet connection and try again.');
+    } finally {
+      setAuthLoading(false);
     }
-    setAuthLoading(false);
   };
 
   const signOut = async () => {
