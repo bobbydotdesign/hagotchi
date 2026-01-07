@@ -939,6 +939,7 @@ const HabitTracker = () => {
     } else if (wasCompleted && !nowCompleted) {
       newStreak = Math.max(0, currentStreak - 1);
     }
+    console.log('STREAK DEBUG:', { habitName: habit.name, wasCompleted, nowCompleted, currentStreak, newStreak });
 
     // Optimistic update
     setHabits(habits.map(h =>
