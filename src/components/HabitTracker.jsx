@@ -158,18 +158,19 @@ const HabitTracker = () => {
 
     const updatedHabits = checkDayChange(data);
 
-    // If habits were updated due to day change, sync back to Supabase
+    // If habits were updated due to day change, batch sync to Supabase
     if (JSON.stringify(updatedHabits) !== JSON.stringify(data)) {
-      for (const habit of updatedHabits) {
-        await supabase
+      // Use Promise.all for parallel updates instead of sequential
+      await Promise.all(updatedHabits.map(habit =>
+        supabase
           .from('habits')
           .update({
             completed_today: habit.completed_today,
             history: habit.history,
             streak: habit.streak
           })
-          .eq('id', habit.id);
-      }
+          .eq('id', habit.id)
+      ));
     }
 
     return updatedHabits;
@@ -210,7 +211,7 @@ const HabitTracker = () => {
 
       // Fetch habits if user exists
       if (session?.user) {
-        // If we have cached habits, show them and stop loading immediately
+        // If we have cached habits, show them immediately
         const cached = localStorage.getItem(HABITS_CACHE_KEY);
         if (cached) {
           try {
@@ -219,24 +220,34 @@ const HabitTracker = () => {
           } catch {}
         }
 
-        // Fetch fresh data in background (with 30s timeout)
-        try {
+        // Fetch fresh data - no timeout if we have cache, 30s timeout if we don't
+        const doFetch = async () => {
+          try {
+            const data = await fetchHabits(session.user.id);
+            setHabits(data);
+            localStorage.setItem(HABITS_CACHE_KEY, JSON.stringify(data));
+            setFetchError(null);
+          } catch (err) {
+            console.error('Error fetching habits:', err);
+            if (!cached) {
+              setFetchError('Failed to load habits');
+            }
+          }
+        };
+
+        if (cached) {
+          // Have cache - fetch in background without blocking
+          doFetch();
+        } else {
+          // No cache - wait for fetch with timeout
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Fetch timeout - check your connection')), 30000)
+            setTimeout(() => reject(new Error('Fetch timeout')), 30000)
           );
-          const data = await Promise.race([
-            fetchHabits(session.user.id),
-            timeoutPromise
-          ]);
-          setHabits(data);
-          // Cache the fresh data
-          localStorage.setItem(HABITS_CACHE_KEY, JSON.stringify(data));
-          setFetchError(null);
-        } catch (err) {
-          console.error('Error fetching habits:', err);
-          // Only show error if we don't have cached data
-          if (!cached) {
-            setFetchError(err.message || 'Failed to load habits');
+          try {
+            await Promise.race([doFetch(), timeoutPromise]);
+          } catch (err) {
+            console.error('Error fetching habits:', err);
+            setFetchError('Connection slow - please refresh');
           }
         }
       } else {
@@ -250,17 +261,25 @@ const HabitTracker = () => {
     return () => subscription.unsubscribe();
   }, [fetchHabits]);
 
-  // Real-time subscription DISABLED - was causing slow API responses
-  // TODO: Re-enable once we figure out the performance issue
+  // Refetch habits when tab becomes visible (keeps data in sync across devices)
   useEffect(() => {
     if (!user) return;
 
-    // Realtime disabled for performance testing
-    console.log('realtime: disabled for performance');
-
-    return () => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        try {
+          const data = await fetchHabits(user.id);
+          setHabits(data);
+          localStorage.setItem(HABITS_CACHE_KEY, JSON.stringify(data));
+        } catch (err) {
+          console.error('Error refreshing habits on visibility change:', err);
+        }
+      }
     };
-  }, [user]);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user, fetchHabits]);
 
   // Cache habits whenever they change (for faster loads)
   useEffect(() => {
@@ -1032,11 +1051,7 @@ const HabitTracker = () => {
     // Only track horizontal swipes (ignore vertical scrolling)
     if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaX) < 10) return;
 
-    // Prevent vertical scroll during horizontal swipe
-    if (Math.abs(deltaX) > 10) {
-      e.preventDefault();
-    }
-
+    // CSS touch-action: pan-y handles preventing horizontal scroll
     // Limit swipe range with resistance at edges
     const maxSwipe = 120;
     const clampedX = Math.max(-maxSwipe, Math.min(maxSwipe, deltaX));
@@ -1946,6 +1961,7 @@ const HabitTracker = () => {
                         cursor: 'pointer',
                         userSelect: 'none',
                         WebkitTapHighlightColor: 'transparent',
+                        touchAction: 'pan-y',
                         position: 'relative',
                         zIndex: 1
                       }}
