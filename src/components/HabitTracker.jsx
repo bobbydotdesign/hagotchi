@@ -33,6 +33,7 @@ const HabitTracker = () => {
   const [showMobileHint, setShowMobileHint] = useState(() => {
     return !localStorage.getItem('habito_mobile_hint_seen');
   });
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   // Handle responsive layout
   useEffect(() => {
@@ -1130,65 +1131,169 @@ const HabitTracker = () => {
                 day: 'numeric'
               }).toUpperCase()}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px' }}>
               {syncing && (
                 <span style={{ color: '#ffaa00', fontSize: '10px' }}>
                   SYNCING...
                 </span>
               )}
-              <span style={{ color: '#00ff41' }}>
+              <span style={{ color: '#00ff41', fontSize: isMobile ? '9px' : '12px' }}>
                 {cursorBlink ? '●' : '○'} ONLINE
               </span>
-              <button
-                onClick={() => setShowSettings(true)}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid #333',
-                  color: '#666',
-                  padding: '4px 8px',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  fontSize: '9px',
-                  letterSpacing: '0.5px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#00ff41';
-                  e.target.style.color = '#00ff41';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.borderColor = '#333';
-                  e.target.style.color = '#666';
-                }}
-              >
-                [SETTINGS]
-              </button>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  signOut();
-                }}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid #333',
-                  color: '#666',
-                  padding: '4px 8px',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  fontSize: '9px',
-                  letterSpacing: '0.5px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#ff4444';
-                  e.target.style.color = '#ff4444';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.borderColor = '#333';
-                  e.target.style.color = '#666';
-                }}
-              >
-                [LOGOUT]
-              </button>
+
+              {isMobile ? (
+                /* Mobile: More menu button */
+                <div style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => setShowMobileMenu(!showMobileMenu)}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid #333',
+                      color: showMobileMenu ? '#00ff41' : '#666',
+                      padding: '6px 10px',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      fontSize: '14px',
+                      lineHeight: 1,
+                      borderColor: showMobileMenu ? '#00ff41' : '#333'
+                    }}
+                  >
+                    ⋮
+                  </button>
+
+                  {/* Dropdown menu */}
+                  {showMobileMenu && (
+                    <>
+                      {/* Backdrop to close menu */}
+                      <div
+                        onClick={() => setShowMobileMenu(false)}
+                        style={{
+                          position: 'fixed',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          zIndex: 99
+                        }}
+                      />
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        right: 0,
+                        marginTop: '4px',
+                        backgroundColor: '#0a0a0a',
+                        border: '1px solid #333',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        zIndex: 100,
+                        minWidth: '120px',
+                        animation: 'fadeIn 0.15s ease-out'
+                      }}>
+                        <button
+                          onClick={() => {
+                            setShowMobileMenu(false);
+                            setShowSettings(true);
+                          }}
+                          style={{
+                            width: '100%',
+                            background: 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid #222',
+                            color: '#888',
+                            padding: '12px 16px',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            fontSize: '12px',
+                            textAlign: 'left',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}
+                        >
+                          <span style={{ opacity: 0.6 }}>⚙</span> Settings
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setShowMobileMenu(false);
+                            signOut();
+                          }}
+                          style={{
+                            width: '100%',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#ff4444',
+                            padding: '12px 16px',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            fontSize: '12px',
+                            textAlign: 'left',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}
+                        >
+                          <span>⏻</span> Logout
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                /* Desktop: Inline buttons */
+                <>
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid #333',
+                      color: '#666',
+                      padding: '4px 8px',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      fontSize: '9px',
+                      letterSpacing: '0.5px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.borderColor = '#00ff41';
+                      e.target.style.color = '#00ff41';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.borderColor = '#333';
+                      e.target.style.color = '#666';
+                    }}
+                  >
+                    [SETTINGS]
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      signOut();
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid #333',
+                      color: '#666',
+                      padding: '4px 8px',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      fontSize: '9px',
+                      letterSpacing: '0.5px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.borderColor = '#ff4444';
+                      e.target.style.color = '#ff4444';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.borderColor = '#333';
+                      e.target.style.color = '#666';
+                    }}
+                  >
+                    [LOGOUT]
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
