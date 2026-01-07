@@ -529,11 +529,13 @@ const HabitTracker = () => {
     return getHabitCompletions(habit) >= (habit.daily_goal || 1);
   };
 
-  // Check if habit is scheduled for today
-  const isHabitScheduledToday = (habit) => {
-    const today = new Date().getDay(); // 0=Sun, 1=Mon, etc.
+  // Check if habit is scheduled for the selected/viewed date
+  const isHabitScheduledForDate = (habit) => {
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const viewedDay = new Date(year, month - 1, day).getDay(); // 0=Sun, 1=Mon, etc.
     const scheduledDays = habit.scheduled_days || [0,1,2,3,4,5,6];
-    return scheduledDays.includes(today);
+    // Handle both number and string types from database
+    return scheduledDays.some(d => Number(d) === viewedDay);
   };
 
   // Format time as compact string (8A, 8:30P)
@@ -1973,7 +1975,8 @@ const HabitTracker = () => {
                         textShadow: isHabitCompleted(habit) ? '0 0 8px #00ff41' : 'none',
                         width: '28px',
                         textAlign: 'center',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        opacity: !isHabitScheduledForDate(habit) && !isHabitCompleted(habit) ? 0.5 : 1
                       }}>
                         {habit.icon}
                       </span>
@@ -1992,7 +1995,8 @@ const HabitTracker = () => {
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
-                          textDecoration: !isHabitScheduledToday(habit) ? 'line-through' : 'none'
+                          textDecoration: !isHabitScheduledForDate(habit) && !isHabitCompleted(habit) ? 'line-through' : 'none',
+                          opacity: !isHabitScheduledForDate(habit) && !isHabitCompleted(habit) ? 0.5 : 1
                         }}>
                           {habit.name}
                         </span>
@@ -2003,7 +2007,8 @@ const HabitTracker = () => {
                             background: 'rgba(255,255,255,0.05)',
                             padding: '2px 5px',
                             borderRadius: '3px',
-                            flexShrink: 0
+                            flexShrink: 0,
+                            opacity: !isHabitScheduledForDate(habit) && !isHabitCompleted(habit) ? 0.5 : 1
                           }}>
                             {formatScheduledTime(habit.scheduled_time)}
                           </span>
@@ -2011,7 +2016,12 @@ const HabitTracker = () => {
                       </div>
 
                       {/* Progress dots (matching desktop style) */}
-                      <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                      <div style={{
+                        display: 'flex',
+                        gap: '4px',
+                        flexShrink: 0,
+                        opacity: !isHabitScheduledForDate(habit) && !isHabitCompleted(habit) ? 0.5 : 1
+                      }}>
                         {Array.from({ length: habit.daily_goal || 1 }).map((_, i) => (
                           <span
                             key={i}
@@ -2032,7 +2042,8 @@ const HabitTracker = () => {
                         fontSize: '14px',
                         minWidth: '50px',
                         textAlign: 'right',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        opacity: !isHabitScheduledForDate(habit) && !isHabitCompleted(habit) ? 0.5 : 1
                       }}>
                         {habit.streak > 0 ? `${habit.streak}d 🔥` : ''}
                       </span>
@@ -2130,7 +2141,7 @@ const HabitTracker = () => {
                         fontSize: '16px',
                         color: isHabitCompleted(habit) ? '#00ff41' : '#666',
                         textShadow: isHabitCompleted(habit) ? '0 0 8px #00ff41' : 'none',
-                        opacity: isHabitScheduledToday(habit) ? 1 : 0.35
+                        opacity: !isHabitScheduledForDate(habit) && !isHabitCompleted(habit) ? 0.35 : 1
                       }}>
                         {habit.icon}
                       </span>
@@ -2140,12 +2151,11 @@ const HabitTracker = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        opacity: isHabitScheduledToday(habit) ? 1 : 0.35
+                        opacity: !isHabitScheduledForDate(habit) && !isHabitCompleted(habit) ? 0.35 : 1
                       }}>
                         <span style={{
                           color: isHabitCompleted(habit) ? '#00ff41' : '#999',
-                          fontSize: '13px',
-                          textDecoration: !isHabitScheduledToday(habit) && isMobile ? 'line-through' : 'none'
+                          fontSize: '13px'
                         }}>
                           {habit.name}
                         </span>
@@ -2167,7 +2177,7 @@ const HabitTracker = () => {
                         display: 'flex',
                         gap: '3px',
                         justifyContent: 'center',
-                        opacity: isHabitScheduledToday(habit) ? 1 : 0.35
+                        opacity: !isHabitScheduledForDate(habit) && !isHabitCompleted(habit) ? 0.35 : 1
                       }}>
                         {Array.from({ length: habit.daily_goal || 1 }).map((_, i) => (
                           <span
@@ -2188,7 +2198,7 @@ const HabitTracker = () => {
                         color: habit.streak > 7 ? '#00ff41' : habit.streak > 3 ? '#ffaa00' : '#888',
                         fontSize: '12px',
                         textAlign: 'right',
-                        opacity: isHabitScheduledToday(habit) ? 1 : 0.35
+                        opacity: !isHabitScheduledForDate(habit) && !isHabitCompleted(habit) ? 0.35 : 1
                       }}>
                         {habit.streak > 0 ? `${habit.streak}d 🔥` : ''}
                       </span>
