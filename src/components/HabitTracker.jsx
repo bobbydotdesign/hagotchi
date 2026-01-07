@@ -1337,44 +1337,45 @@ const HabitTracker = () => {
           </div>
 
           <div style={{ padding: isMobile ? '12px' : '16px 12px' }}>
+            {/* Progress bar with percentage inside */}
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: isMobile ? '8px' : '12px',
-              marginBottom: '12px'
+              position: 'relative',
+              height: isMobile ? '24px' : '28px',
+              backgroundColor: '#222',
+              borderRadius: '3px',
+              overflow: 'hidden'
             }}>
+              {/* Filled portion */}
+              <div style={{
+                width: `${completionPercent}%`,
+                height: '100%',
+                backgroundColor: completionPercent === 100 ? '#00ff41' : '#444',
+                borderRadius: '3px',
+                transition: 'width 0.3s ease, background-color 0.3s ease'
+              }} />
+              {/* Percentage text centered */}
               <span style={{
-                fontSize: isMobile ? '22px' : '28px',
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                fontSize: isMobile ? '12px' : '14px',
                 fontWeight: 'bold',
-                color: completionPercent === 100 ? '#00ff41' : '#fff',
-                textShadow: completionPercent === 100 ? '0 0 15px #00ff41' : 'none',
-                minWidth: isMobile ? '55px' : '70px'
+                color: completionPercent === 100 ? '#000' : '#fff',
+                textShadow: completionPercent === 100 ? 'none' : '0 1px 2px rgba(0,0,0,0.5)'
               }}>
                 {completionPercent}%
               </span>
-              <div style={{
-                flex: 1,
-                height: isMobile ? '8px' : '10px',
-                backgroundColor: '#222',
-                borderRadius: '2px',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  width: `${completionPercent}%`,
-                  height: '100%',
-                  backgroundColor: completionPercent === 100 ? '#00ff41' : '#888',
-                  borderRadius: '2px',
-                  transition: 'width 0.3s ease, background-color 0.3s ease'
-                }} />
-              </div>
             </div>
 
             {completionPercent === 100 && (
               <div style={{
+                marginTop: '8px',
                 color: '#00ff41',
                 fontSize: isMobile ? '10px' : '11px',
                 animation: 'pulse 2s infinite',
-                letterSpacing: isMobile ? '1px' : '2px'
+                letterSpacing: isMobile ? '1px' : '2px',
+                textAlign: 'center'
               }}>
                 ★ ALL HABITS COMPLETE ★
               </div>
