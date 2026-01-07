@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCompletions } from '../hooks/useCompletions';
 import ActivityView from './activity/ActivityView';
+import BottomSheet from './BottomSheet';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -1255,7 +1256,6 @@ const HabitTracker = () => {
  ██║  ██║██║  ██║██████╔╝██║   ██║   ╚██████╔╝
  ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝   ╚═╝    ╚═════╝`}
             </pre>
-            <span style={{ color: '#888', fontSize: '12px', marginLeft: '2px' }}>.space</span>
           </div>
 
           <div style={{
@@ -1531,107 +1531,25 @@ const HabitTracker = () => {
  ██║  ██║██║  ██║██████╔╝██║   ██║   ╚██████╔╝
  ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝   ╚═╝    ╚═════╝`}
               </pre>
-              <span style={{ color: '#888', fontSize: isMobile ? '8px' : '12px', marginLeft: '2px' }}>.space</span>
             </div>
 
             {/* Mobile: More menu button in header */}
             {isMobile && (
-              <div style={{ position: 'relative' }}>
-                <button
-                  onClick={() => setShowMobileMenu(!showMobileMenu)}
-                  style={{
-                    background: 'transparent',
-                    border: '1px solid #333',
-                    color: showMobileMenu ? '#00ff41' : '#666',
-                    padding: '6px 10px',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    fontSize: '14px',
-                    lineHeight: 1,
-                    borderColor: showMobileMenu ? '#00ff41' : '#333'
-                  }}
-                >
-                  ⋮
-                </button>
-
-                {/* Dropdown menu */}
-                {showMobileMenu && (
-                  <>
-                    {/* Backdrop to close menu */}
-                    <div
-                      onClick={() => setShowMobileMenu(false)}
-                      style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        zIndex: 99
-                      }}
-                    />
-                    <div style={{
-                      position: 'absolute',
-                      top: '100%',
-                      right: 0,
-                      marginTop: '4px',
-                      backgroundColor: '#0a0a0a',
-                      border: '1px solid #333',
-                      borderRadius: '4px',
-                      overflow: 'hidden',
-                      zIndex: 100,
-                      minWidth: '120px',
-                      animation: 'fadeIn 0.15s ease-out'
-                    }}>
-                      <button
-                        onClick={() => {
-                          setShowMobileMenu(false);
-                          setShowSettings(true);
-                        }}
-                        style={{
-                          width: '100%',
-                          background: 'transparent',
-                          border: 'none',
-                          borderBottom: '1px solid #222',
-                          color: '#888',
-                          padding: '12px 16px',
-                          cursor: 'pointer',
-                          fontFamily: 'inherit',
-                          fontSize: '12px',
-                          textAlign: 'left',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}
-                      >
-                        <span style={{ opacity: 0.6 }}>⚙</span> Settings
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setShowMobileMenu(false);
-                          signOut();
-                        }}
-                        style={{
-                          width: '100%',
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#ff4444',
-                          padding: '12px 16px',
-                          cursor: 'pointer',
-                          fontFamily: 'inherit',
-                          fontSize: '12px',
-                          textAlign: 'left',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}
-                      >
-                        <span>⏻</span> Logout
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+              <button
+                onClick={() => setShowMobileMenu(true)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #333',
+                  color: '#666',
+                  padding: '6px 10px',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  fontSize: '14px',
+                  lineHeight: 1,
+                }}
+              >
+                ⋮
+              </button>
             )}
           </div>
 
@@ -2073,7 +1991,8 @@ const HabitTracker = () => {
                           fontSize: '15px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
+                          whiteSpace: 'nowrap',
+                          textDecoration: !isHabitScheduledToday(habit) ? 'line-through' : 'none'
                         }}>
                           {habit.name}
                         </span>
@@ -2225,7 +2144,8 @@ const HabitTracker = () => {
                       }}>
                         <span style={{
                           color: isHabitCompleted(habit) ? '#00ff41' : '#999',
-                          fontSize: '13px'
+                          fontSize: '13px',
+                          textDecoration: !isHabitScheduledToday(habit) && isMobile ? 'line-through' : 'none'
                         }}>
                           {habit.name}
                         </span>
@@ -2488,742 +2408,710 @@ const HabitTracker = () => {
         )}
 
         {/* Password Reset Modal */}
-        {showPasswordReset && (
+        <BottomSheet
+          isOpen={showPasswordReset}
+          onClose={() => {
+            setShowPasswordReset(false);
+            setNewPassword('');
+            setAuthMessage('');
+          }}
+          title="SET NEW PASSWORD"
+          isMobile={isMobile}
+        >
           <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.85)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 2000
+            color: '#888',
+            fontSize: '11px',
+            marginBottom: '20px',
+            lineHeight: '1.6'
+          }}>
+            enter your new password (min 6 characters)
+          </div>
+
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="new password"
+            autoFocus
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: '#0a0a0a',
+              border: '1px solid #333',
+              color: '#fff',
+              fontFamily: 'inherit',
+              fontSize: '14px',
+              marginBottom: '16px',
+              outline: 'none'
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && updatePassword()}
+            onFocus={(e) => e.target.style.borderColor = '#00ff41'}
+            onBlur={(e) => e.target.style.borderColor = '#333'}
+          />
+
+          {authMessage && (
+            <div style={{
+              marginBottom: '16px',
+              padding: '12px',
+              backgroundColor: authMessage.includes('Error') ? 'rgba(255,0,0,0.1)' : 'rgba(0,255,65,0.1)',
+              border: `1px solid ${authMessage.includes('Error') ? '#ff4444' : '#00ff41'}`,
+              color: authMessage.includes('Error') ? '#ff4444' : '#00ff41',
+              fontSize: '11px',
+              textAlign: 'center'
+            }}>
+              {authMessage}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={updatePassword}
+              disabled={authLoading}
+              style={{
+                flex: 1,
+                padding: '10px',
+                backgroundColor: '#00ff41',
+                border: 'none',
+                color: '#000',
+                cursor: authLoading ? 'wait' : 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                letterSpacing: '1px',
+                opacity: authLoading ? 0.7 : 1
+              }}
+            >
+              {authLoading ? '[SAVING...]' : '[SET PASSWORD]'}
+            </button>
+            <button
+              onClick={() => {
+                setShowPasswordReset(false);
+                setNewPassword('');
+                setAuthMessage('');
+              }}
+              style={{
+                flex: 1,
+                padding: '10px',
+                backgroundColor: 'transparent',
+                border: '1px solid #444',
+                color: '#888',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '11px',
+                letterSpacing: '1px'
+              }}
+            >
+              [SKIP]
+            </button>
+          </div>
+        </BottomSheet>
+
+        {/* Settings Modal */}
+        <BottomSheet
+          isOpen={showSettings}
+          onClose={() => {
+            setShowSettings(false);
+            setSettingsPassword('');
+            setSettingsNewPassword('');
+            setSettingsMessage('');
+          }}
+          title="USER SETTINGS"
+          isMobile={isMobile}
+        >
+          {/* User Info */}
+          <div style={{
+            border: '1px solid #333',
+            padding: '16px',
+            marginBottom: '20px',
+            backgroundColor: '#0a0a0a'
+          }}>
+            <div style={{ color: '#888', fontSize: '10px', marginBottom: '8px' }}>EMAIL</div>
+            <div style={{ color: '#fff', fontSize: '13px' }}>{user?.email || 'N/A'}</div>
+          </div>
+
+          {/* Change Password Section */}
+          <div style={{
+            border: '1px solid #333',
+            padding: '16px',
+            marginBottom: '16px',
+            backgroundColor: '#0a0a0a'
           }}>
             <div style={{
-              backgroundColor: '#0d0d0d',
-              border: '1px solid #333',
-              padding: '24px',
-              width: '90%',
-              maxWidth: '400px'
+              color: '#00ff41',
+              marginBottom: '16px',
+              fontSize: '11px',
+              letterSpacing: '1px'
             }}>
-              <div style={{ 
-                color: '#00ff41', 
-                marginBottom: '16px',
-                fontSize: '12px',
-                letterSpacing: '1px'
-              }}>
-                &gt; SET NEW PASSWORD{cursorBlink ? '▌' : ' '}
-              </div>
-              
+              CHANGE PASSWORD
+            </div>
+
+            <input
+              type="password"
+              value={settingsPassword}
+              onChange={(e) => setSettingsPassword(e.target.value)}
+              placeholder="current password"
+              style={{
+                width: '100%',
+                padding: '12px',
+                backgroundColor: '#0d0d0d',
+                border: '1px solid #333',
+                color: '#fff',
+                fontFamily: 'inherit',
+                fontSize: '14px',
+                marginBottom: '12px',
+                outline: 'none'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#00ff41'}
+              onBlur={(e) => e.target.style.borderColor = '#333'}
+            />
+
+            <input
+              type="password"
+              value={settingsNewPassword}
+              onChange={(e) => setSettingsNewPassword(e.target.value)}
+              placeholder="new password (min 6 characters)"
+              style={{
+                width: '100%',
+                padding: '12px',
+                backgroundColor: '#0d0d0d',
+                border: '1px solid #333',
+                color: '#fff',
+                fontFamily: 'inherit',
+                fontSize: '14px',
+                marginBottom: '12px',
+                outline: 'none'
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && changePassword()}
+              onFocus={(e) => e.target.style.borderColor = '#00ff41'}
+              onBlur={(e) => e.target.style.borderColor = '#333'}
+            />
+
+            {settingsMessage && (
               <div style={{
-                color: '#888',
+                marginBottom: '12px',
+                padding: '12px',
+                backgroundColor: settingsMessage.includes('Error') ? 'rgba(255,0,0,0.1)' : 'rgba(0,255,65,0.1)',
+                border: `1px solid ${settingsMessage.includes('Error') ? '#ff4444' : '#00ff41'}`,
+                color: settingsMessage.includes('Error') ? '#ff4444' : '#00ff41',
                 fontSize: '11px',
-                marginBottom: '20px',
-                lineHeight: '1.6'
+                textAlign: 'center'
               }}>
-                enter your new password (min 6 characters)
+                {settingsMessage}
               </div>
-              
+            )}
+
+            <button
+              onClick={changePassword}
+              disabled={settingsLoading}
+              style={{
+                width: '100%',
+                padding: '10px',
+                backgroundColor: settingsLoading ? '#1a1a1a' : '#00ff41',
+                border: 'none',
+                color: settingsLoading ? '#666' : '#000',
+                cursor: settingsLoading ? 'wait' : 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                letterSpacing: '1px',
+                opacity: settingsLoading ? 0.7 : 1
+              }}
+            >
+              {settingsLoading ? '[UPDATING...]' : '[CHANGE PASSWORD]'}
+            </button>
+          </div>
+
+          {/* Logout Button */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowSettings(false);
+              signOut();
+            }}
+            style={{
+              width: '100%',
+              padding: '10px',
+              backgroundColor: 'transparent',
+              border: '1px solid #ff4444',
+              color: '#ff4444',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              fontSize: '11px',
+              letterSpacing: '1px',
+              transition: 'all 0.15s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = 'rgba(255,68,68,0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'transparent';
+            }}
+          >
+            [LOGOUT]
+          </button>
+        </BottomSheet>
+
+        {/* Add Modal */}
+        <BottomSheet
+          isOpen={showAddModal}
+          onClose={() => {
+            setShowAddModal(false);
+            setNewHabitName('');
+            setNewHabitGoal(1);
+            setNewHabitTime('');
+            setNewHabitDays([0,1,2,3,4,5,6]);
+          }}
+          title="NEW HABIT"
+          isMobile={isMobile}
+        >
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            <input
+              type="text"
+              value={newHabitName}
+              onChange={(e) => setNewHabitName(e.target.value)}
+              placeholder="enter habit name..."
+              autoFocus
+              style={{
+                flex: 1,
+                padding: '12px',
+                backgroundColor: '#0a0a0a',
+                border: '1px solid #333',
+                color: '#fff',
+                fontFamily: 'inherit',
+                fontSize: '14px',
+                outline: 'none'
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && addHabit()}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ color: '#888', fontSize: '11px' }}>×</span>
               <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="new password"
-                autoFocus
+                type="number"
+                min="1"
+                max="10"
+                value={newHabitGoal}
+                onChange={(e) => setNewHabitGoal(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
                 style={{
-                  width: '100%',
-                  padding: '12px',
+                  width: '40px',
+                  padding: '12px 8px',
                   backgroundColor: '#0a0a0a',
                   border: '1px solid #333',
                   color: '#fff',
                   fontFamily: 'inherit',
                   fontSize: '14px',
-                  marginBottom: '16px',
+                  textAlign: 'center',
                   outline: 'none'
                 }}
-                onKeyDown={(e) => e.key === 'Enter' && updatePassword()}
-                onFocus={(e) => e.target.style.borderColor = '#00ff41'}
-                onBlur={(e) => e.target.style.borderColor = '#333'}
               />
-              
-              {authMessage && (
-                <div style={{
-                  marginBottom: '16px',
-                  padding: '12px',
-                  backgroundColor: authMessage.includes('Error') ? 'rgba(255,0,0,0.1)' : 'rgba(0,255,65,0.1)',
-                  border: `1px solid ${authMessage.includes('Error') ? '#ff4444' : '#00ff41'}`,
-                  color: authMessage.includes('Error') ? '#ff4444' : '#00ff41',
-                  fontSize: '11px',
-                  textAlign: 'center'
-                }}>
-                  {authMessage}
-                </div>
-              )}
-              
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={updatePassword}
-                  disabled={authLoading}
-                  style={{
-                    flex: 1,
-                    padding: '10px',
-                    backgroundColor: '#00ff41',
-                    border: 'none',
-                    color: '#000',
-                    cursor: authLoading ? 'wait' : 'pointer',
-                    fontFamily: 'inherit',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    letterSpacing: '1px',
-                    opacity: authLoading ? 0.7 : 1
-                  }}
-                >
-                  {authLoading ? '[SAVING...]' : '[SET PASSWORD]'}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPasswordReset(false);
-                    setNewPassword('');
-                    setAuthMessage('');
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: '10px',
-                    backgroundColor: 'transparent',
-                    border: '1px solid #444',
-                    color: '#888',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    fontSize: '11px',
-                    letterSpacing: '1px'
-                  }}
-                >
-                  [SKIP]
-                </button>
-              </div>
             </div>
           </div>
-        )}
 
-        {/* Settings Modal */}
-        {showSettings && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.85)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 2000
-          }}>
-            <div style={{
-              backgroundColor: '#0d0d0d',
-              border: '1px solid #333',
-              padding: '24px',
-              width: '90%',
-              maxWidth: '500px'
-            }}>
-              <div style={{ 
-                color: '#00ff41', 
-                marginBottom: '20px',
-                fontSize: '12px',
-                letterSpacing: '1px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <span>&gt; USER SETTINGS{cursorBlink ? '▌' : ' '}</span>
-                <button
-                  onClick={() => {
-                    setShowSettings(false);
-                    setSettingsPassword('');
-                    setSettingsNewPassword('');
-                    setSettingsMessage('');
-                  }}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#888',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    fontSize: '16px',
-                    padding: '0 8px'
-                  }}
-                  onMouseEnter={(e) => e.target.style.color = '#ff4444'}
-                  onMouseLeave={(e) => e.target.style.color = '#888'}
-                >
-                  ×
-                </button>
-              </div>
-
-              {/* User Info */}
-              <div style={{
-                border: '1px solid #333',
-                padding: '16px',
-                marginBottom: '20px',
-                backgroundColor: '#0a0a0a'
-              }}>
-                <div style={{ color: '#888', fontSize: '10px', marginBottom: '8px' }}>EMAIL</div>
-                <div style={{ color: '#fff', fontSize: '13px' }}>{user?.email || 'N/A'}</div>
-              </div>
-
-              {/* Change Password Section */}
-              <div style={{
-                border: '1px solid #333',
-                padding: '16px',
-                marginBottom: '16px',
-                backgroundColor: '#0a0a0a'
-              }}>
-                <div style={{ 
-                  color: '#00ff41', 
-                  marginBottom: '16px',
-                  fontSize: '11px',
-                  letterSpacing: '1px'
-                }}>
-                  CHANGE PASSWORD
-                </div>
-
-                <input
-                  type="password"
-                  value={settingsPassword}
-                  onChange={(e) => setSettingsPassword(e.target.value)}
-                  placeholder="current password"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    backgroundColor: '#0d0d0d',
-                    border: '1px solid #333',
-                    color: '#fff',
-                    fontFamily: 'inherit',
-                    fontSize: '14px',
-                    marginBottom: '12px',
-                    outline: 'none'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#00ff41'}
-                  onBlur={(e) => e.target.style.borderColor = '#333'}
-                />
-
-                <input
-                  type="password"
-                  value={settingsNewPassword}
-                  onChange={(e) => setSettingsNewPassword(e.target.value)}
-                  placeholder="new password (min 6 characters)"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    backgroundColor: '#0d0d0d',
-                    border: '1px solid #333',
-                    color: '#fff',
-                    fontFamily: 'inherit',
-                    fontSize: '14px',
-                    marginBottom: '12px',
-                    outline: 'none'
-                  }}
-                  onKeyDown={(e) => e.key === 'Enter' && changePassword()}
-                  onFocus={(e) => e.target.style.borderColor = '#00ff41'}
-                  onBlur={(e) => e.target.style.borderColor = '#333'}
-                />
-
-                {settingsMessage && (
-                  <div style={{
-                    marginBottom: '12px',
-                    padding: '12px',
-                    backgroundColor: settingsMessage.includes('Error') ? 'rgba(255,0,0,0.1)' : 'rgba(0,255,65,0.1)',
-                    border: `1px solid ${settingsMessage.includes('Error') ? '#ff4444' : '#00ff41'}`,
-                    color: settingsMessage.includes('Error') ? '#ff4444' : '#00ff41',
-                    fontSize: '11px',
-                    textAlign: 'center'
-                  }}>
-                    {settingsMessage}
-                  </div>
-                )}
-
-                <button
-                  onClick={changePassword}
-                  disabled={settingsLoading}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    backgroundColor: settingsLoading ? '#1a1a1a' : '#00ff41',
-                    border: 'none',
-                    color: settingsLoading ? '#666' : '#000',
-                    cursor: settingsLoading ? 'wait' : 'pointer',
-                    fontFamily: 'inherit',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    letterSpacing: '1px',
-                    opacity: settingsLoading ? 0.7 : 1
-                  }}
-                >
-                  {settingsLoading ? '[UPDATING...]' : '[CHANGE PASSWORD]'}
-                </button>
-              </div>
-
-              {/* Logout Button */}
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowSettings(false);
-                  signOut();
-                }}
+          {/* Time field with toggle */}
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ color: '#888', fontSize: '10px', marginBottom: '6px', letterSpacing: '1px' }}>
+              TIME
+            </div>
+            <div style={{ display: 'flex', alignItems: 'stretch', gap: '8px' }}>
+              <input
+                type="time"
+                value={newHabitTime}
+                onChange={(e) => setNewHabitTime(e.target.value)}
+                disabled={!newHabitTime}
                 style={{
-                  width: '100%',
-                  padding: '10px',
-                  backgroundColor: 'transparent',
-                  border: '1px solid #ff4444',
-                  color: '#ff4444',
-                  cursor: 'pointer',
+                  padding: '10px 12px',
+                  backgroundColor: '#0a0a0a',
+                  border: '1px solid #333',
+                  color: newHabitTime ? '#fff' : '#444',
                   fontFamily: 'inherit',
-                  fontSize: '11px',
-                  letterSpacing: '1px',
-                  transition: 'all 0.15s'
+                  fontSize: '14px',
+                  outline: 'none',
+                  colorScheme: 'dark',
+                  opacity: newHabitTime ? 1 : 0.5
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = 'rgba(255,68,68,0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
-                }}
-              >
-                [LOGOUT]
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Add Modal */}
-        {showAddModal && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.85)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 2000
-          }}>
-            <div style={{
-              backgroundColor: '#0d0d0d',
-              border: '1px solid #333',
-              padding: '24px',
-              width: '90%',
-              maxWidth: '400px'
-            }}>
-              <div style={{ 
-                color: '#00ff41', 
-                marginBottom: '16px',
-                fontSize: '12px',
-                letterSpacing: '1px'
-              }}>
-                &gt; NEW HABIT{cursorBlink ? '▌' : ' '}
-              </div>
-              
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-                <input
-                  type="text"
-                  value={newHabitName}
-                  onChange={(e) => setNewHabitName(e.target.value)}
-                  placeholder="enter habit name..."
-                  autoFocus
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #333',
-                    color: '#fff',
-                    fontFamily: 'inherit',
-                    fontSize: '14px',
-                    outline: 'none'
-                  }}
-                  onKeyDown={(e) => e.key === 'Enter' && addHabit()}
-                />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ color: '#888', fontSize: '11px' }}>×</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={newHabitGoal}
-                    onChange={(e) => setNewHabitGoal(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
-                    style={{
-                      width: '40px',
-                      padding: '12px 8px',
-                      backgroundColor: '#0a0a0a',
-                      border: '1px solid #333',
-                      color: '#fff',
-                      fontFamily: 'inherit',
-                      fontSize: '14px',
-                      textAlign: 'center',
-                      outline: 'none'
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Time field with toggle */}
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ color: '#888', fontSize: '10px', marginBottom: '6px', letterSpacing: '1px' }}>
-                  TIME
-                </div>
-                <div style={{ display: 'flex', alignItems: 'stretch', gap: '8px' }}>
-                  <input
-                    type="time"
-                    value={newHabitTime}
-                    onChange={(e) => setNewHabitTime(e.target.value)}
-                    disabled={!newHabitTime}
-                    style={{
-                      padding: '10px 12px',
-                      backgroundColor: '#0a0a0a',
-                      border: '1px solid #333',
-                      color: newHabitTime ? '#fff' : '#444',
-                      fontFamily: 'inherit',
-                      fontSize: '14px',
-                      outline: 'none',
-                      colorScheme: 'dark',
-                      opacity: newHabitTime ? 1 : 0.5
-                    }}
-                  />
-                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                    <button
-                      onClick={() => setNewHabitTime(newHabitTime || '09:00')}
-                      style={{
-                        background: newHabitTime ? 'rgba(0,255,65,0.2)' : 'transparent',
-                        border: `1px solid ${newHabitTime ? '#00ff41' : '#444'}`,
-                        color: newHabitTime ? '#00ff41' : '#666',
-                        padding: '3px 8px',
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        fontSize: '9px',
-                        borderRadius: '2px',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      ON
-                    </button>
-                    <button
-                      onClick={() => setNewHabitTime('')}
-                      style={{
-                        background: !newHabitTime ? 'rgba(255,255,255,0.1)' : 'transparent',
-                        border: `1px solid ${!newHabitTime ? '#666' : '#444'}`,
-                        color: !newHabitTime ? '#888' : '#666',
-                        padding: '3px 8px',
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        fontSize: '9px',
-                        borderRadius: '2px',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      OFF
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Days selector */}
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ color: '#888', fontSize: '10px', marginBottom: '6px', letterSpacing: '1px' }}>
-                  DAYS
-                </div>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        const newDays = newHabitDays.includes(i)
-                          ? newHabitDays.filter(d => d !== i)
-                          : [...newHabitDays, i].sort();
-                        // Don't allow empty selection
-                        if (newDays.length > 0) setNewHabitDays(newDays);
-                      }}
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        backgroundColor: newHabitDays.includes(i) ? 'rgba(0,255,65,0.15)' : 'transparent',
-                        border: `1px solid ${newHabitDays.includes(i) ? '#00ff41' : '#333'}`,
-                        color: newHabitDays.includes(i) ? '#00ff41' : '#666',
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        fontSize: '11px',
-                        borderRadius: '4px',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      {day}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
+              />
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <button
-                  onClick={addHabit}
-                  disabled={syncing}
+                  onClick={() => setNewHabitTime(newHabitTime || '09:00')}
                   style={{
-                    flex: 1,
-                    padding: '10px',
-                    backgroundColor: '#00ff41',
-                    border: 'none',
-                    color: '#000',
-                    cursor: syncing ? 'wait' : 'pointer',
+                    background: newHabitTime ? 'rgba(0,255,65,0.2)' : 'transparent',
+                    border: `1px solid ${newHabitTime ? '#00ff41' : '#444'}`,
+                    color: newHabitTime ? '#00ff41' : '#666',
+                    padding: '3px 8px',
+                    cursor: 'pointer',
                     fontFamily: 'inherit',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    letterSpacing: '1px',
-                    opacity: syncing ? 0.7 : 1
+                    fontSize: '9px',
+                    borderRadius: '2px',
+                    transition: 'all 0.15s'
                   }}
                 >
-                  {syncing ? '[SAVING...]' : '[CONFIRM]'}
+                  ON
                 </button>
                 <button
+                  onClick={() => setNewHabitTime('')}
+                  style={{
+                    background: !newHabitTime ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    border: `1px solid ${!newHabitTime ? '#666' : '#444'}`,
+                    color: !newHabitTime ? '#888' : '#666',
+                    padding: '3px 8px',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: '9px',
+                    borderRadius: '2px',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  OFF
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Days selector */}
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ color: '#888', fontSize: '10px', marginBottom: '6px', letterSpacing: '1px' }}>
+              DAYS
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                <button
+                  key={i}
                   onClick={() => {
-                    setShowAddModal(false);
-                    setNewHabitName('');
-                    setNewHabitGoal(1);
-                    setNewHabitTime('');
-                    setNewHabitDays([0,1,2,3,4,5,6]);
+                    const newDays = newHabitDays.includes(i)
+                      ? newHabitDays.filter(d => d !== i)
+                      : [...newHabitDays, i].sort();
+                    // Don't allow empty selection
+                    if (newDays.length > 0) setNewHabitDays(newDays);
                   }}
                   style={{
                     flex: 1,
-                    padding: '10px',
-                    backgroundColor: 'transparent',
-                    border: '1px solid #444',
-                    color: '#888',
+                    height: '36px',
+                    backgroundColor: newHabitDays.includes(i) ? 'rgba(0,255,65,0.15)' : 'transparent',
+                    border: `1px solid ${newHabitDays.includes(i) ? '#00ff41' : '#333'}`,
+                    color: newHabitDays.includes(i) ? '#00ff41' : '#666',
                     cursor: 'pointer',
                     fontFamily: 'inherit',
                     fontSize: '11px',
-                    letterSpacing: '1px'
+                    transition: 'all 0.15s'
                   }}
                 >
-                  [CANCEL]
+                  {day}
                 </button>
-              </div>
+              ))}
             </div>
           </div>
-        )}
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={addHabit}
+              disabled={syncing}
+              style={{
+                flex: 1,
+                padding: '10px',
+                backgroundColor: '#00ff41',
+                border: 'none',
+                color: '#000',
+                cursor: syncing ? 'wait' : 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                letterSpacing: '1px',
+                opacity: syncing ? 0.7 : 1
+              }}
+            >
+              {syncing ? '[SAVING...]' : '[CONFIRM]'}
+            </button>
+            <button
+              onClick={() => {
+                setShowAddModal(false);
+                setNewHabitName('');
+                setNewHabitGoal(1);
+                setNewHabitTime('');
+                setNewHabitDays([0,1,2,3,4,5,6]);
+              }}
+              style={{
+                flex: 1,
+                padding: '10px',
+                backgroundColor: 'transparent',
+                border: '1px solid #444',
+                color: '#888',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '11px',
+                letterSpacing: '1px'
+              }}
+            >
+              [CANCEL]
+            </button>
+          </div>
+        </BottomSheet>
 
         {/* Edit Modal */}
-        {editingHabit && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.85)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 2000
-          }}>
-            <div style={{
-              backgroundColor: '#0d0d0d',
-              border: '1px solid #333',
-              padding: '24px',
-              width: '90%',
-              maxWidth: '400px'
-            }}>
-              <div style={{
-                color: '#00ff41',
-                marginBottom: '16px',
-                fontSize: '12px',
-                letterSpacing: '1px'
-              }}>
-                &gt; EDIT HABIT{cursorBlink ? '▌' : ' '}
-              </div>
+        <BottomSheet
+          isOpen={!!editingHabit}
+          onClose={() => {
+            setEditingHabit(null);
+            setEditHabitName('');
+            setEditHabitGoal(1);
+            setEditHabitTime('');
+            setEditHabitDays([0,1,2,3,4,5,6]);
+          }}
+          title="EDIT HABIT"
+          isMobile={isMobile}
+        >
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            <input
+              type="text"
+              value={editHabitName}
+              onChange={(e) => setEditHabitName(e.target.value)}
+              placeholder="enter habit name..."
+              autoFocus
+              style={{
+                flex: 1,
+                padding: '12px',
+                backgroundColor: '#0a0a0a',
+                border: '1px solid #333',
+                color: '#fff',
+                fontFamily: 'inherit',
+                fontSize: '14px',
+                outline: 'none'
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && updateHabit()}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ color: '#888', fontSize: '11px' }}>×</span>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                value={editHabitGoal}
+                onChange={(e) => setEditHabitGoal(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+                style={{
+                  width: '40px',
+                  padding: '12px 8px',
+                  backgroundColor: '#0a0a0a',
+                  border: '1px solid #333',
+                  color: '#fff',
+                  fontFamily: 'inherit',
+                  fontSize: '14px',
+                  textAlign: 'center',
+                  outline: 'none'
+                }}
+              />
+            </div>
+          </div>
 
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-                <input
-                  type="text"
-                  value={editHabitName}
-                  onChange={(e) => setEditHabitName(e.target.value)}
-                  placeholder="enter habit name..."
-                  autoFocus
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #333',
-                    color: '#fff',
-                    fontFamily: 'inherit',
-                    fontSize: '14px',
-                    outline: 'none'
-                  }}
-                  onKeyDown={(e) => e.key === 'Enter' && updateHabit()}
-                />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ color: '#888', fontSize: '11px' }}>×</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={editHabitGoal}
-                    onChange={(e) => setEditHabitGoal(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
-                    style={{
-                      width: '40px',
-                      padding: '12px 8px',
-                      backgroundColor: '#0a0a0a',
-                      border: '1px solid #333',
-                      color: '#fff',
-                      fontFamily: 'inherit',
-                      fontSize: '14px',
-                      textAlign: 'center',
-                      outline: 'none'
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Time field with toggle */}
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ color: '#888', fontSize: '10px', marginBottom: '6px', letterSpacing: '1px' }}>
-                  TIME
-                </div>
-                <div style={{ display: 'flex', alignItems: 'stretch', gap: '8px' }}>
-                  <input
-                    type="time"
-                    value={editHabitTime}
-                    onChange={(e) => setEditHabitTime(e.target.value)}
-                    disabled={!editHabitTime}
-                    style={{
-                      padding: '10px 12px',
-                      backgroundColor: '#0a0a0a',
-                      border: '1px solid #333',
-                      color: editHabitTime ? '#fff' : '#444',
-                      fontFamily: 'inherit',
-                      fontSize: '14px',
-                      outline: 'none',
-                      colorScheme: 'dark',
-                      opacity: editHabitTime ? 1 : 0.5
-                    }}
-                  />
-                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                    <button
-                      onClick={() => setEditHabitTime(editHabitTime || '09:00')}
-                      style={{
-                        background: editHabitTime ? 'rgba(0,255,65,0.2)' : 'transparent',
-                        border: `1px solid ${editHabitTime ? '#00ff41' : '#444'}`,
-                        color: editHabitTime ? '#00ff41' : '#666',
-                        padding: '3px 8px',
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        fontSize: '9px',
-                        borderRadius: '2px',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      ON
-                    </button>
-                    <button
-                      onClick={() => setEditHabitTime('')}
-                      style={{
-                        background: !editHabitTime ? 'rgba(255,255,255,0.1)' : 'transparent',
-                        border: `1px solid ${!editHabitTime ? '#666' : '#444'}`,
-                        color: !editHabitTime ? '#888' : '#666',
-                        padding: '3px 8px',
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        fontSize: '9px',
-                        borderRadius: '2px',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      OFF
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Days selector */}
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ color: '#888', fontSize: '10px', marginBottom: '6px', letterSpacing: '1px' }}>
-                  DAYS
-                </div>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        const newDays = editHabitDays.includes(i)
-                          ? editHabitDays.filter(d => d !== i)
-                          : [...editHabitDays, i].sort();
-                        // Don't allow empty selection
-                        if (newDays.length > 0) setEditHabitDays(newDays);
-                      }}
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        backgroundColor: editHabitDays.includes(i) ? 'rgba(0,255,65,0.15)' : 'transparent',
-                        border: `1px solid ${editHabitDays.includes(i) ? '#00ff41' : '#333'}`,
-                        color: editHabitDays.includes(i) ? '#00ff41' : '#666',
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        fontSize: '11px',
-                        borderRadius: '4px',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      {day}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
+          {/* Time field with toggle */}
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ color: '#888', fontSize: '10px', marginBottom: '6px', letterSpacing: '1px' }}>
+              TIME
+            </div>
+            <div style={{ display: 'flex', alignItems: 'stretch', gap: '8px' }}>
+              <input
+                type="time"
+                value={editHabitTime}
+                onChange={(e) => setEditHabitTime(e.target.value)}
+                disabled={!editHabitTime}
+                style={{
+                  padding: '10px 12px',
+                  backgroundColor: '#0a0a0a',
+                  border: '1px solid #333',
+                  color: editHabitTime ? '#fff' : '#444',
+                  fontFamily: 'inherit',
+                  fontSize: '14px',
+                  outline: 'none',
+                  colorScheme: 'dark',
+                  opacity: editHabitTime ? 1 : 0.5
+                }}
+              />
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <button
-                  onClick={updateHabit}
-                  disabled={syncing}
+                  onClick={() => setEditHabitTime(editHabitTime || '09:00')}
                   style={{
-                    flex: 1,
-                    padding: '10px',
-                    backgroundColor: '#00ff41',
-                    border: 'none',
-                    color: '#000',
-                    cursor: syncing ? 'wait' : 'pointer',
-                    fontFamily: 'inherit',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    letterSpacing: '1px',
-                    opacity: syncing ? 0.7 : 1
-                  }}
-                >
-                  {syncing ? '[SAVING...]' : '[SAVE]'}
-                </button>
-                <button
-                  onClick={() => {
-                    setEditingHabit(null);
-                    setEditHabitName('');
-                    setEditHabitGoal(1);
-                    setEditHabitTime('');
-                    setEditHabitDays([0,1,2,3,4,5,6]);
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: '10px',
-                    backgroundColor: 'transparent',
-                    border: '1px solid #444',
-                    color: '#888',
+                    background: editHabitTime ? 'rgba(0,255,65,0.2)' : 'transparent',
+                    border: `1px solid ${editHabitTime ? '#00ff41' : '#444'}`,
+                    color: editHabitTime ? '#00ff41' : '#666',
+                    padding: '3px 8px',
                     cursor: 'pointer',
                     fontFamily: 'inherit',
-                    fontSize: '11px',
-                    letterSpacing: '1px'
+                    fontSize: '9px',
+                    borderRadius: '2px',
+                    transition: 'all 0.15s'
                   }}
                 >
-                  [CANCEL]
+                  ON
+                </button>
+                <button
+                  onClick={() => setEditHabitTime('')}
+                  style={{
+                    background: !editHabitTime ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    border: `1px solid ${!editHabitTime ? '#666' : '#444'}`,
+                    color: !editHabitTime ? '#888' : '#666',
+                    padding: '3px 8px',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: '9px',
+                    borderRadius: '2px',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  OFF
                 </button>
               </div>
             </div>
           </div>
-        )}
+
+          {/* Days selector */}
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ color: '#888', fontSize: '10px', marginBottom: '6px', letterSpacing: '1px' }}>
+              DAYS
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    const newDays = editHabitDays.includes(i)
+                      ? editHabitDays.filter(d => d !== i)
+                      : [...editHabitDays, i].sort();
+                    // Don't allow empty selection
+                    if (newDays.length > 0) setEditHabitDays(newDays);
+                  }}
+                  style={{
+                    flex: 1,
+                    height: '36px',
+                    backgroundColor: editHabitDays.includes(i) ? 'rgba(0,255,65,0.15)' : 'transparent',
+                    border: `1px solid ${editHabitDays.includes(i) ? '#00ff41' : '#333'}`,
+                    color: editHabitDays.includes(i) ? '#00ff41' : '#666',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: '11px',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  {day}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={updateHabit}
+              disabled={syncing}
+              style={{
+                flex: 1,
+                padding: '10px',
+                backgroundColor: '#00ff41',
+                border: 'none',
+                color: '#000',
+                cursor: syncing ? 'wait' : 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                letterSpacing: '1px',
+                opacity: syncing ? 0.7 : 1
+              }}
+            >
+              {syncing ? '[SAVING...]' : '[SAVE]'}
+            </button>
+            <button
+              onClick={() => {
+                setEditingHabit(null);
+                setEditHabitName('');
+                setEditHabitGoal(1);
+                setEditHabitTime('');
+                setEditHabitDays([0,1,2,3,4,5,6]);
+              }}
+              style={{
+                flex: 1,
+                padding: '10px',
+                backgroundColor: 'transparent',
+                border: '1px solid #444',
+                color: '#888',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '11px',
+                letterSpacing: '1px'
+              }}
+            >
+              [CANCEL]
+            </button>
+          </div>
+        </BottomSheet>
+
+        {/* Mobile Menu BottomSheet */}
+        <BottomSheet
+          isOpen={showMobileMenu}
+          onClose={() => setShowMobileMenu(false)}
+          title="MENU"
+          isMobile={isMobile}
+          showCursor={false}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button
+              onClick={() => {
+                setShowMobileMenu(false);
+                setShowSettings(true);
+              }}
+              style={{
+                width: '100%',
+                background: 'transparent',
+                border: '1px solid #333',
+                color: '#888',
+                padding: '16px 20px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '13px',
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = '#00ff41';
+                e.target.style.color = '#00ff41';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = '#333';
+                e.target.style.color = '#888';
+              }}
+            >
+              <span style={{ opacity: 0.6 }}>⚙</span> Settings
+            </button>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                setShowMobileMenu(false);
+                signOut();
+              }}
+              style={{
+                width: '100%',
+                background: 'transparent',
+                border: '1px solid #ff4444',
+                color: '#ff4444',
+                padding: '16px 20px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '13px',
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(255,68,68,0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+              }}
+            >
+              <span>⏻</span> Logout
+            </button>
+          </div>
+        </BottomSheet>
 
         {/* Footer */}
         <div style={{
