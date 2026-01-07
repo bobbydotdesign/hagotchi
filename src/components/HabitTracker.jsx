@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { useCompletions } from '../hooks/useCompletions';
+import ActivityView from './activity/ActivityView';
 
 const HABITS_CACHE_KEY = 'habito_habits_cache';
 
@@ -287,6 +289,9 @@ const HabitTracker = () => {
   const [settingsMessage, setSettingsMessage] = useState('');
   const [settingsLoading, setSettingsLoading] = useState(false);
   const isUpdatingPassword = useRef(false);
+
+  // Hook for recording completions to activity tracking table
+  const { recordCompletion } = useCompletions(user?.id);
 
   const signInWithPassword = async () => {
     if (!email.trim() || !password.trim()) return;
@@ -626,6 +631,9 @@ const HabitTracker = () => {
       console.error('Error updating habit:', error);
       // Revert on error
       setHabits(habits);
+    } else {
+      // Record to completions table for activity tracking
+      await recordCompletion(id, newCompletions, dailyGoal);
     }
     setSyncing(false);
   };
@@ -1166,108 +1174,131 @@ const HabitTracker = () => {
               <span style={{ color: '#666', fontSize: isMobile ? '8px' : '12px', marginLeft: '2px' }}>.space</span>
             </div>
 
-            {/* Menu button (mobile) or inline buttons (desktop) on right */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px' }}>
-              {isMobile ? (
-                /* Mobile: More menu button */
-                <div style={{ position: 'relative' }}>
-                  <button
-                    onClick={() => setShowMobileMenu(!showMobileMenu)}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid #333',
-                      color: showMobileMenu ? '#00ff41' : '#666',
-                      padding: '6px 10px',
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      fontSize: '14px',
-                      lineHeight: 1,
-                      borderColor: showMobileMenu ? '#00ff41' : '#333'
-                    }}
-                  >
-                    ⋮
-                  </button>
+            {/* Mobile: More menu button in header */}
+            {isMobile && (
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowMobileMenu(!showMobileMenu)}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid #333',
+                    color: showMobileMenu ? '#00ff41' : '#666',
+                    padding: '6px 10px',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: '14px',
+                    lineHeight: 1,
+                    borderColor: showMobileMenu ? '#00ff41' : '#333'
+                  }}
+                >
+                  ⋮
+                </button>
 
-                  {/* Dropdown menu */}
-                  {showMobileMenu && (
-                    <>
-                      {/* Backdrop to close menu */}
-                      <div
-                        onClick={() => setShowMobileMenu(false)}
-                        style={{
-                          position: 'fixed',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          zIndex: 99
-                        }}
-                      />
-                      <div style={{
-                        position: 'absolute',
-                        top: '100%',
+                {/* Dropdown menu */}
+                {showMobileMenu && (
+                  <>
+                    {/* Backdrop to close menu */}
+                    <div
+                      onClick={() => setShowMobileMenu(false)}
+                      style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
                         right: 0,
-                        marginTop: '4px',
-                        backgroundColor: '#0a0a0a',
-                        border: '1px solid #333',
-                        borderRadius: '4px',
-                        overflow: 'hidden',
-                        zIndex: 100,
-                        minWidth: '120px',
-                        animation: 'fadeIn 0.15s ease-out'
-                      }}>
-                        <button
-                          onClick={() => {
-                            setShowMobileMenu(false);
-                            setShowSettings(true);
-                          }}
-                          style={{
-                            width: '100%',
-                            background: 'transparent',
-                            border: 'none',
-                            borderBottom: '1px solid #222',
-                            color: '#888',
-                            padding: '12px 16px',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            fontSize: '12px',
-                            textAlign: 'left',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                          }}
-                        >
-                          <span style={{ opacity: 0.6 }}>⚙</span> Settings
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setShowMobileMenu(false);
-                            signOut();
-                          }}
-                          style={{
-                            width: '100%',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#ff4444',
-                            padding: '12px 16px',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            fontSize: '12px',
-                            textAlign: 'left',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                          }}
-                        >
-                          <span>⏻</span> Logout
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ) : (
-                /* Desktop: Inline buttons */
+                        bottom: 0,
+                        zIndex: 99
+                      }}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      right: 0,
+                      marginTop: '4px',
+                      backgroundColor: '#0a0a0a',
+                      border: '1px solid #333',
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                      zIndex: 100,
+                      minWidth: '120px',
+                      animation: 'fadeIn 0.15s ease-out'
+                    }}>
+                      <button
+                        onClick={() => {
+                          setShowMobileMenu(false);
+                          setShowSettings(true);
+                        }}
+                        style={{
+                          width: '100%',
+                          background: 'transparent',
+                          border: 'none',
+                          borderBottom: '1px solid #222',
+                          color: '#888',
+                          padding: '12px 16px',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          fontSize: '12px',
+                          textAlign: 'left',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <span style={{ opacity: 0.6 }}>⚙</span> Settings
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setShowMobileMenu(false);
+                          signOut();
+                        }}
+                        style={{
+                          width: '100%',
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#ff4444',
+                          padding: '12px 16px',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          fontSize: '12px',
+                          textAlign: 'left',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <span>⏻</span> Logout
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Status bar */}
+          <div style={{
+            borderTop: '1px solid #333',
+            borderBottom: '1px solid #333',
+            padding: isMobile ? '10px 0' : '12px 0',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: isMobile ? '10px' : '12px'
+          }}>
+            <span style={{ color: '#666' }}>
+              {new Date().toLocaleDateString('en-US', {
+                weekday: isMobile ? 'short' : 'long',
+                month: 'short',
+                day: 'numeric'
+              }).toUpperCase()}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px' }}>
+              {syncing && (
+                <span style={{ color: '#ffaa00', fontSize: '10px' }}>
+                  SYNCING...
+                </span>
+              )}
+              {!isMobile && (
                 <>
                   <button
                     onClick={() => setShowSettings(true)}
@@ -1320,32 +1351,6 @@ const HabitTracker = () => {
                     [LOGOUT]
                   </button>
                 </>
-              )}
-            </div>
-          </div>
-
-          {/* Status bar */}
-          <div style={{
-            borderTop: '1px solid #333',
-            borderBottom: '1px solid #333',
-            padding: isMobile ? '10px 0' : '12px 0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            fontSize: isMobile ? '10px' : '12px'
-          }}>
-            <span style={{ color: '#666' }}>
-              {new Date().toLocaleDateString('en-US', {
-                weekday: isMobile ? 'short' : 'long',
-                month: 'short',
-                day: 'numeric'
-              }).toUpperCase()}
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px' }}>
-              {syncing && (
-                <span style={{ color: '#ffaa00', fontSize: '10px' }}>
-                  SYNCING...
-                </span>
               )}
               <span style={{ color: '#00ff41', fontSize: isMobile ? '9px' : '12px' }}>
                 {cursorBlink ? '●' : '○'} ONLINE
@@ -1425,7 +1430,7 @@ const HabitTracker = () => {
           marginBottom: '16px',
           fontSize: isMobile ? '10px' : '11px'
         }}>
-          {['today', 'week', 'stats'].map(view => (
+          {['today', 'activity'].map(view => (
             <button
               key={view}
               onClick={() => setSelectedView(view)}
@@ -1460,13 +1465,13 @@ const HabitTracker = () => {
             display: 'grid',
             gridTemplateColumns: isMobile
               ? '24px 1fr 32px 50px 24px'
-              : selectedView === 'week' ? '30px 1fr 40px 140px 76px 30px' : '30px 1fr 40px 80px 76px 30px',
+              : '30px 1fr 40px 80px 76px 30px',
             gap: isMobile ? '6px' : '8px'
           }}>
             <span></span>
             <span>HABIT</span>
             <span>{isMobile ? '' : '×'}</span>
-            <span>{isMobile ? '' : (selectedView === 'week' ? 'M  T  W  T  F  S  S' : 'STREAK')}</span>
+            <span>{isMobile ? '' : 'STREAK'}</span>
             <span>{isMobile ? '' : 'STATUS'}</span>
             {!isMobile && <span></span>}
           </div>
@@ -1738,7 +1743,7 @@ const HabitTracker = () => {
                   /* Desktop: Single-row grid layout */
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: selectedView === 'week' ? '30px 1fr 40px 140px 76px 30px' : '30px 1fr 40px 80px 76px 30px',
+                    gridTemplateColumns: '30px 1fr 40px 80px 76px 30px',
                     gap: '8px',
                     alignItems: 'center',
                     padding: '12px',
@@ -1777,28 +1782,12 @@ const HabitTracker = () => {
                       ))}
                     </div>
 
-                    {selectedView === 'week' ? (
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        {(habit.history || [0,0,0,0,0,0,0]).map((day, i) => (
-                          <span
-                            key={i}
-                            style={{
-                              color: day ? '#00ff41' : '#333',
-                              fontSize: '14px'
-                            }}
-                          >
-                            {day ? '■' : '□'}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span style={{
-                        color: habit.streak > 7 ? '#00ff41' : habit.streak > 3 ? '#ffaa00' : '#666',
-                        fontSize: '12px'
-                      }}>
-                        {habit.streak > 0 ? `${habit.streak}d 🔥` : '---'}
-                      </span>
-                    )}
+                    <span style={{
+                      color: habit.streak > 7 ? '#00ff41' : habit.streak > 3 ? '#ffaa00' : '#666',
+                      fontSize: '12px'
+                    }}>
+                      {habit.streak > 0 ? `${habit.streak}d 🔥` : '---'}
+                    </span>
 
                     {confirmingDeleteId === habit.id ? (
                       <button
@@ -1898,42 +1887,14 @@ const HabitTracker = () => {
           + ADD NEW HABIT
         </button>
 
-        {/* Stats View */}
-        {selectedView === 'stats' && (
-          <div style={{
-            marginTop: '24px',
-            border: '1px solid #333',
-            backgroundColor: '#0d0d0d'
-          }}>
-            <div style={{
-              borderBottom: '1px solid #333',
-              padding: '8px 12px',
-              fontSize: '11px',
-              color: '#666'
-            }}>
-              ┌─ ANALYTICS ─┐
-            </div>
-            <div style={{ padding: '16px 12px' }}>
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ color: '#666', fontSize: '10px', marginBottom: '4px' }}>LONGEST STREAK</div>
-                <div style={{ color: '#00ff41', fontSize: '24px' }}>
-                  {Math.max(...habits.map(h => h.streak), 0)} days
-                </div>
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ color: '#666', fontSize: '10px', marginBottom: '4px' }}>TOTAL HABITS</div>
-                <div style={{ color: '#fff', fontSize: '24px' }}>{habits.length}</div>
-              </div>
-              <div>
-                <div style={{ color: '#666', fontSize: '10px', marginBottom: '4px' }}>COMPLETION RATE (7D)</div>
-                <div style={{ color: '#ffaa00', fontSize: '24px' }}>
-                  {habits.length > 0 
-                    ? Math.round(habits.reduce((acc, h) => acc + (h.history || []).filter(d => d).length, 0) / (habits.length * 7) * 100)
-                    : 0}%
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Activity View */}
+        {selectedView === 'activity' && (
+          <ActivityView
+            userId={user?.id}
+            habits={habits}
+            isMobile={isMobile}
+            cursorBlink={cursorBlink}
+          />
         )}
 
         {/* Password Reset Modal */}
