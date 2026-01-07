@@ -953,7 +953,6 @@ const HabitTracker = () => {
     } else if (wasCompleted && !nowCompleted) {
       newStreak = Math.max(0, currentStreak - 1);
     }
-    console.log('STREAK DEBUG:', { habitName: habit.name, wasCompleted, nowCompleted, currentStreak, newStreak, history: habit.history });
 
     // Optimistic update
     setHabits(habits.map(h =>
@@ -1935,7 +1934,6 @@ const HabitTracker = () => {
                   items={habitsForSelectedDate.map(h => h.id)}
                   strategy={verticalListSortingStrategy}
                 >
-              {console.log('HABITS DATA:', habitsForSelectedDate.map(h => ({ name: h.name, streak: h.streak, history: h.history, completed_today: h.completed_today })))}
               {habitsForSelectedDate.map((habit, index) => (
               <SortableItem key={habit.id} id={habit.id} disabled={isMobile}>
                 {({ listeners, isDragging }) => (
