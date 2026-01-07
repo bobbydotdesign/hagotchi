@@ -310,11 +310,12 @@ const HabitTracker = () => {
         }
       }
 
-      // Then recalculate all streaks
+      // Then recalculate all streaks (preserve existing if no completion data)
       const updatedHabits = await Promise.all(
         habits.map(async (habit) => {
           const newStreak = await calculateStreakForHabit(habit.id, habit.daily_goal || 1);
-          return { ...habit, streak: newStreak };
+          // If null returned, keep existing streak (no completion data to calculate from)
+          return { ...habit, streak: newStreak !== null ? newStreak : habit.streak };
         })
       );
 
@@ -336,8 +337,9 @@ const HabitTracker = () => {
   }, [user, habits.length, streaksRecalculated, loading]);
 
   // Separate function to calculate streak (used by effect above)
+  // Returns null if no completion data exists (to preserve existing streak)
   const calculateStreakForHabit = async (habitId, dailyGoal) => {
-    if (!user) return 0;
+    if (!user) return null;
 
     const { data: completions, error } = await supabase
       .from('completions')
@@ -346,7 +348,7 @@ const HabitTracker = () => {
       .eq('habit_id', habitId)
       .order('completed_date', { ascending: false });
 
-    if (error || !completions) return 0;
+    if (error || !completions || completions.length === 0) return null;
 
     const completedDates = new Set(
       completions
@@ -358,6 +360,15 @@ const HabitTracker = () => {
     const checkDate = new Date();
     const getDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+    const todayStr = getDateStr(checkDate);
+
+    // If today is completed, count it and continue backwards
+    if (completedDates.has(todayStr)) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    // Count consecutive days backwards (from yesterday if today not done)
     while (true) {
       const dateStr = getDateStr(checkDate);
       if (completedDates.has(dateStr)) {
