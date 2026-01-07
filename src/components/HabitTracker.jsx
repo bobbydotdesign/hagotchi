@@ -23,6 +23,9 @@ const HabitTracker = () => {
   const [syncing, setSyncing] = useState(false);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
   const [newHabitGoal, setNewHabitGoal] = useState(1);
+  const [editingHabit, setEditingHabit] = useState(null);
+  const [editHabitName, setEditHabitName] = useState('');
+  const [editHabitGoal, setEditHabitGoal] = useState(1);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
 
   // Swipe gesture state for native mobile feel
@@ -675,6 +678,44 @@ const HabitTracker = () => {
     setSyncing(false);
   };
 
+  const startEditHabit = (habit) => {
+    setEditingHabit(habit);
+    setEditHabitName(habit.name);
+    setEditHabitGoal(habit.daily_goal || 1);
+    setConfirmingDeleteId(null);
+  };
+
+  const updateHabit = async () => {
+    if (!editHabitName.trim() || !editingHabit) return;
+
+    const updates = {
+      name: editHabitName.toLowerCase(),
+      daily_goal: editHabitGoal
+    };
+
+    // Optimistic update
+    setHabits(habits.map(h =>
+      h.id === editingHabit.id ? { ...h, ...updates } : h
+    ));
+
+    setSyncing(true);
+    const { error } = await supabase
+      .from('habits')
+      .update(updates)
+      .eq('id', editingHabit.id);
+
+    if (error) {
+      console.error('Error updating habit:', error);
+      // Revert on error
+      setHabits(habits);
+    }
+
+    setEditingHabit(null);
+    setEditHabitName('');
+    setEditHabitGoal(1);
+    setSyncing(false);
+  };
+
   // Swipe gesture handlers for native mobile experience
   const SWIPE_THRESHOLD = 80;
   const SWIPE_VELOCITY_THRESHOLD = 0.3;
@@ -753,7 +794,13 @@ const HabitTracker = () => {
   };
 
   const completedCount = habits.filter(h => h.completed_today).length;
-  const completionPercent = habits.length > 0 ? Math.round((completedCount / habits.length) * 100) : 0;
+  // Calculate progress including partial completions on multi-goal habits
+  const totalProgress = habits.reduce((sum, h) => {
+    const goal = h.daily_goal || 1;
+    const completions = h.completions_today || 0;
+    return sum + Math.min(completions / goal, 1);
+  }, 0);
+  const completionPercent = habits.length > 0 ? Math.round((totalProgress / habits.length) * 100) : 0;
 
   const generateProgressBar = (percent, width = 20) => {
     const filled = Math.round((percent / 100) * width);
@@ -1092,8 +1139,15 @@ const HabitTracker = () => {
         
         {/* Header */}
         <div style={{ marginBottom: isMobile ? '20px' : '30px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'flex-end', marginBottom: isMobile ? '12px' : '20px' }}>
-            <>
+          {/* Top row: Logo on left, Menu on right */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: isMobile ? '12px' : '20px'
+          }}>
+            {/* Logo on left */}
+            <div style={{ display: 'inline-flex', alignItems: 'flex-end' }}>
               <pre style={{
                 color: '#00ff41',
                 fontSize: isMobile ? '5px' : '10px',
@@ -1110,37 +1164,10 @@ const HabitTracker = () => {
  ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝   ╚═╝    ╚═════╝`}
               </pre>
               <span style={{ color: '#666', fontSize: isMobile ? '8px' : '12px', marginLeft: '2px' }}>.space</span>
-            </>
-          </div>
+            </div>
 
-          <div style={{
-            borderTop: '1px solid #333',
-            borderBottom: '1px solid #333',
-            padding: isMobile ? '10px 0' : '12px 0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            fontSize: isMobile ? '10px' : '12px',
-            flexWrap: isMobile ? 'wrap' : 'nowrap',
-            gap: isMobile ? '8px' : '0'
-          }}>
-            <span style={{ color: '#666' }}>
-              {new Date().toLocaleDateString('en-US', {
-                weekday: isMobile ? 'short' : 'long',
-                month: 'short',
-                day: 'numeric'
-              }).toUpperCase()}
-            </span>
+            {/* Menu button (mobile) or inline buttons (desktop) on right */}
             <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px' }}>
-              {syncing && (
-                <span style={{ color: '#ffaa00', fontSize: '10px' }}>
-                  SYNCING...
-                </span>
-              )}
-              <span style={{ color: '#00ff41', fontSize: isMobile ? '9px' : '12px' }}>
-                {cursorBlink ? '●' : '○'} ONLINE
-              </span>
-
               {isMobile ? (
                 /* Mobile: More menu button */
                 <div style={{ position: 'relative' }}>
@@ -1296,6 +1323,35 @@ const HabitTracker = () => {
               )}
             </div>
           </div>
+
+          {/* Status bar */}
+          <div style={{
+            borderTop: '1px solid #333',
+            borderBottom: '1px solid #333',
+            padding: isMobile ? '10px 0' : '12px 0',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: isMobile ? '10px' : '12px'
+          }}>
+            <span style={{ color: '#666' }}>
+              {new Date().toLocaleDateString('en-US', {
+                weekday: isMobile ? 'short' : 'long',
+                month: 'short',
+                day: 'numeric'
+              }).toUpperCase()}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px' }}>
+              {syncing && (
+                <span style={{ color: '#ffaa00', fontSize: '10px' }}>
+                  SYNCING...
+                </span>
+              )}
+              <span style={{ color: '#00ff41', fontSize: isMobile ? '9px' : '12px' }}>
+                {cursorBlink ? '●' : '○'} ONLINE
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Stats Panel */}
@@ -1332,17 +1388,21 @@ const HabitTracker = () => {
               }}>
                 {completionPercent}%
               </span>
-              <span style={{
+              <div style={{
                 flex: 1,
-                fontFamily: 'monospace',
-                fontSize: isMobile ? '12px' : '14px',
-                color: completionPercent === 100 ? '#00ff41' : '#888',
-                letterSpacing: '0px',
-                whiteSpace: 'nowrap',
+                height: isMobile ? '8px' : '10px',
+                backgroundColor: '#222',
+                borderRadius: '2px',
                 overflow: 'hidden'
               }}>
-                {generateProgressBar(completionPercent, 200)}
-              </span>
+                <div style={{
+                  width: `${completionPercent}%`,
+                  height: '100%',
+                  backgroundColor: completionPercent === 100 ? '#00ff41' : '#888',
+                  borderRadius: '2px',
+                  transition: 'width 0.3s ease, background-color 0.3s ease'
+                }} />
+              </div>
             </div>
 
             {completionPercent === 100 && (
@@ -1462,8 +1522,7 @@ const HabitTracker = () => {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '12px',
+                    justifyContent: 'space-between',
                     padding: '12px 16px',
                     backgroundColor: 'rgba(0,255,65,0.05)',
                     borderBottom: '1px solid #222',
@@ -1473,16 +1532,9 @@ const HabitTracker = () => {
                     animation: 'fadeIn 0.3s ease-out'
                   }}
                 >
-                  <span style={{ color: '#00ff41' }}>←</span>
-                  <span>tap to complete • swipe left to delete</span>
-                  <span style={{ color: '#ff4444' }}>→</span>
-                  <span style={{
-                    marginLeft: '8px',
-                    color: '#444',
-                    fontSize: '10px'
-                  }}>
-                    (tap to dismiss)
-                  </span>
+                  <span><span style={{ color: '#00ff41' }}>→</span> complete</span>
+                  <span style={{ color: '#444', fontSize: '10px' }}>[dismiss]</span>
+                  <span>options <span style={{ color: '#ff4444' }}>←</span></span>
                 </div>
               )}
               {habits.map((habit, index) => (
@@ -1547,8 +1599,8 @@ const HabitTracker = () => {
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        padding: '14px 16px',
-                        gap: '12px',
+                        padding: '14px 12px',
+                        gap: '8px',
                         transform: `translateX(${swipeState[habit.id] || 0}px)`,
                         transition: activeSwipe === habit.id ? 'none' : 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                         backgroundColor: completedAnimation === habit.id
@@ -1563,37 +1615,23 @@ const HabitTracker = () => {
                         zIndex: 1
                       }}
                     >
-                      {/* Completion indicator + Icon */}
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        border: `2px solid ${habit.completed_today ? '#00ff41' : '#333'}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: habit.completed_today ? 'rgba(0,255,65,0.1)' : 'transparent',
-                        transition: 'all 0.2s',
-                        flexShrink: 0,
-                        transform: completedAnimation === habit.id ? 'scale(1.1)' : 'scale(1)'
+                      {/* Icon (matching desktop style) */}
+                      <span style={{
+                        fontSize: '16px',
+                        color: habit.completed_today ? '#00ff41' : '#444',
+                        textShadow: habit.completed_today ? '0 0 8px #00ff41' : 'none',
+                        width: '24px',
+                        textAlign: 'center',
+                        flexShrink: 0
                       }}>
-                        <span style={{
-                          fontSize: '14px',
-                          color: habit.completed_today ? '#00ff41' : '#555',
-                          textShadow: habit.completed_today ? '0 0 6px #00ff41' : 'none'
-                        }}>
-                          {habit.completed_today ? '✓' : habit.icon}
-                        </span>
-                      </div>
+                        {habit.icon}
+                      </span>
 
                       {/* Habit name */}
                       <span style={{
                         flex: 1,
-                        color: habit.completed_today ? '#00ff41' : '#aaa',
-                        fontSize: '15px',
-                        fontWeight: habit.completed_today ? '500' : '400',
-                        textDecoration: habit.completed_today ? 'line-through' : 'none',
-                        textDecorationColor: 'rgba(0,255,65,0.4)',
+                        color: habit.completed_today ? '#00ff41' : '#888',
+                        fontSize: '13px',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
@@ -1601,39 +1639,35 @@ const HabitTracker = () => {
                         {habit.name}
                       </span>
 
-                      {/* Progress bar (replaces dots for multi-goal habits) */}
-                      {(habit.daily_goal || 1) > 1 && (
-                        <div style={{
-                          width: '40px',
-                          height: '4px',
-                          backgroundColor: '#222',
-                          borderRadius: '2px',
-                          overflow: 'hidden',
-                          flexShrink: 0
-                        }}>
-                          <div style={{
-                            width: `${((habit.completions_today || 0) / (habit.daily_goal || 1)) * 100}%`,
-                            height: '100%',
-                            backgroundColor: habit.completed_today ? '#00ff41' : '#666',
-                            borderRadius: '2px',
-                            transition: 'width 0.2s, background-color 0.2s'
-                          }} />
-                        </div>
-                      )}
+                      {/* Progress dots (matching desktop style) */}
+                      <div style={{ display: 'flex', gap: '3px', flexShrink: 0 }}>
+                        {Array.from({ length: habit.daily_goal || 1 }).map((_, i) => (
+                          <span
+                            key={i}
+                            style={{
+                              fontSize: '10px',
+                              color: i < (habit.completions_today || 0) ? '#00ff41' : '#555',
+                              textShadow: i < (habit.completions_today || 0) ? '0 0 4px #00ff41' : 'none'
+                            }}
+                          >
+                            {i < (habit.completions_today || 0) ? '●' : '○'}
+                          </span>
+                        ))}
+                      </div>
 
                       {/* Streak */}
                       <span style={{
-                        color: habit.streak > 7 ? '#00ff41' : habit.streak > 3 ? '#ffaa00' : '#555',
-                        fontSize: '13px',
-                        minWidth: '30px',
+                        color: habit.streak > 7 ? '#00ff41' : habit.streak > 3 ? '#ffaa00' : '#666',
+                        fontSize: '12px',
+                        minWidth: '45px',
                         textAlign: 'right',
                         flexShrink: 0
                       }}>
-                        {habit.streak > 0 ? `${habit.streak}🔥` : ''}
+                        {habit.streak > 0 ? `${habit.streak}d 🔥` : '---'}
                       </span>
                     </div>
 
-                    {/* Delete confirmation overlay */}
+                    {/* Action overlay (Edit/Delete) */}
                     {confirmingDeleteId === habit.id && (
                       <div style={{
                         position: 'absolute',
@@ -1645,7 +1679,7 @@ const HabitTracker = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '12px',
+                        gap: '10px',
                         zIndex: 10,
                         animation: 'fadeIn 0.15s ease-out'
                       }}>
@@ -1655,7 +1689,7 @@ const HabitTracker = () => {
                             background: 'transparent',
                             border: '1px solid #444',
                             color: '#888',
-                            padding: '10px 20px',
+                            padding: '10px 16px',
                             cursor: 'pointer',
                             fontFamily: 'inherit',
                             fontSize: '12px',
@@ -1663,6 +1697,21 @@ const HabitTracker = () => {
                           }}
                         >
                           Cancel
+                        </button>
+                        <button
+                          onClick={() => startEditHabit(habit)}
+                          style={{
+                            background: 'rgba(0,255,65,0.1)',
+                            border: '1px solid #00ff41',
+                            color: '#00ff41',
+                            padding: '10px 16px',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            fontSize: '12px',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          Edit
                         </button>
                         <button
                           onClick={() => {
@@ -1673,7 +1722,7 @@ const HabitTracker = () => {
                             background: 'rgba(255,68,68,0.1)',
                             border: '1px solid #ff4444',
                             color: '#ff4444',
-                            padding: '10px 20px',
+                            padding: '10px 16px',
                             cursor: 'pointer',
                             fontFamily: 'inherit',
                             fontSize: '12px',
@@ -2294,6 +2343,123 @@ const HabitTracker = () => {
                     setShowAddModal(false);
                     setNewHabitName('');
                     setNewHabitGoal(1);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    backgroundColor: 'transparent',
+                    border: '1px solid #444',
+                    color: '#666',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: '11px',
+                    letterSpacing: '1px'
+                  }}
+                >
+                  [CANCEL]
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {editingHabit && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000
+          }}>
+            <div style={{
+              backgroundColor: '#0d0d0d',
+              border: '1px solid #333',
+              padding: '24px',
+              width: '90%',
+              maxWidth: '400px'
+            }}>
+              <div style={{
+                color: '#00ff41',
+                marginBottom: '16px',
+                fontSize: '12px',
+                letterSpacing: '1px'
+              }}>
+                &gt; EDIT HABIT{cursorBlink ? '▌' : ' '}
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                <input
+                  type="text"
+                  value={editHabitName}
+                  onChange={(e) => setEditHabitName(e.target.value)}
+                  placeholder="enter habit name..."
+                  autoFocus
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: '#0a0a0a',
+                    border: '1px solid #333',
+                    color: '#fff',
+                    fontFamily: 'inherit',
+                    fontSize: '14px',
+                    outline: 'none'
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && updateHabit()}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ color: '#666', fontSize: '11px' }}>×</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={editHabitGoal}
+                    onChange={(e) => setEditHabitGoal(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+                    style={{
+                      width: '40px',
+                      padding: '12px 8px',
+                      backgroundColor: '#0a0a0a',
+                      border: '1px solid #333',
+                      color: '#fff',
+                      fontFamily: 'inherit',
+                      fontSize: '14px',
+                      textAlign: 'center',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={updateHabit}
+                  disabled={syncing}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    backgroundColor: '#00ff41',
+                    border: 'none',
+                    color: '#000',
+                    cursor: syncing ? 'wait' : 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    letterSpacing: '1px',
+                    opacity: syncing ? 0.7 : 1
+                  }}
+                >
+                  {syncing ? '[SAVING...]' : '[SAVE]'}
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingHabit(null);
+                    setEditHabitName('');
+                    setEditHabitGoal(1);
                   }}
                   style={{
                     flex: 1,
