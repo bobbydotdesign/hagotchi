@@ -908,7 +908,8 @@ const HabitTracker = () => {
       await recordCompletion(id, newCompletions, dailyGoal, selectedDate);
 
       // Recalculate streak based on all completions
-      const newStreak = await calculateStreakForHabit(id, dailyGoal);
+      const calculatedStreak = await calculateStreakForHabit(id, dailyGoal);
+      const newStreak = calculatedStreak !== null ? calculatedStreak : (habit.streak || 0);
 
       // Update the habit's streak in state and database
       setHabits(prev => prev.map(h =>
@@ -931,11 +932,12 @@ const HabitTracker = () => {
     const nowCompleted = newCompletions >= dailyGoal;
 
     // Adjust streak based on completion status change
-    let newStreak = habit.streak;
+    const currentStreak = habit.streak || 0;
+    let newStreak = currentStreak;
     if (!wasCompleted && nowCompleted) {
-      newStreak = habit.streak + 1;
+      newStreak = currentStreak + 1;
     } else if (wasCompleted && !nowCompleted) {
-      newStreak = Math.max(0, habit.streak - 1);
+      newStreak = Math.max(0, currentStreak - 1);
     }
 
     // Optimistic update
