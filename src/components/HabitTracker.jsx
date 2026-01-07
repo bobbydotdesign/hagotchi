@@ -114,23 +114,23 @@ const HabitTracker = () => {
   const checkDayChange = useCallback((habitsData) => {
     const lastVisit = localStorage.getItem('lastVisit');
     const today = new Date().toDateString();
-    
+
     if (lastVisit && lastVisit !== today) {
       localStorage.setItem('lastVisit', today);
       // It's a new day - shift history and reset completedToday
+      // Don't touch streak here - let the streak recalculation effect handle it
       return habitsData.map(h => ({
         ...h,
         completed_today: false,
         completions_today: 0,
-        history: [...(h.history || [0,0,0,0,0,0,0]).slice(1), h.completed_today ? 1 : 0],
-        streak: h.completed_today ? h.streak : 0 // Reset streak if didn't complete yesterday
+        history: [...(h.history || [0,0,0,0,0,0,0]).slice(1), h.completed_today ? 1 : 0]
       }));
     }
-    
+
     if (!lastVisit) {
       localStorage.setItem('lastVisit', today);
     }
-    
+
     return habitsData;
   }, []);
 
@@ -159,6 +159,7 @@ const HabitTracker = () => {
     const updatedHabits = checkDayChange(data);
 
     // If habits were updated due to day change, batch sync to Supabase
+    // Note: Don't sync streak here - let the streak recalculation effect handle it
     if (JSON.stringify(updatedHabits) !== JSON.stringify(data)) {
       // Use Promise.all for parallel updates instead of sequential
       await Promise.all(updatedHabits.map(habit =>
@@ -166,8 +167,7 @@ const HabitTracker = () => {
           .from('habits')
           .update({
             completed_today: habit.completed_today,
-            history: habit.history,
-            streak: habit.streak
+            history: habit.history
           })
           .eq('id', habit.id)
       ));
