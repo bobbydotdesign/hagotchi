@@ -377,19 +377,19 @@ const HabitTracker = () => {
         .map(c => c.completed_date)
     );
 
-    let streak = 0;
-    const checkDate = new Date();
+    if (completedDates.size === 0) return null;
+
     const getDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-    const todayStr = getDateStr(checkDate);
+    // Find the most recent completed date (could be today or in the past)
+    const sortedDates = [...completedDates].sort().reverse();
+    const mostRecentStr = sortedDates[0];
 
-    // If today is completed, count it and continue backwards
-    if (completedDates.has(todayStr)) {
-      streak++;
-      checkDate.setDate(checkDate.getDate() - 1);
-    }
+    // Parse the most recent date and count backwards from there
+    const [year, month, day] = mostRecentStr.split('-').map(Number);
+    const checkDate = new Date(year, month - 1, day);
 
-    // Count consecutive days backwards (from yesterday if today not done)
+    let streak = 0;
     while (true) {
       const dateStr = getDateStr(checkDate);
       if (completedDates.has(dateStr)) {
@@ -932,14 +932,28 @@ const HabitTracker = () => {
     const nowCompleted = newCompletions >= dailyGoal;
 
     // Adjust streak based on completion status change
-    const currentStreak = habit.streak || 0;
+    let currentStreak = habit.streak || 0;
+
+    // If streak is 0 but history shows yesterday was completed, restore it
+    if (currentStreak === 0 && !wasCompleted && nowCompleted) {
+      const history = habit.history || [];
+      // history[6] is yesterday (most recent in the 7-day array before today)
+      if (history.length > 0 && history[history.length - 1] === 1) {
+        // Count consecutive days from history
+        for (let i = history.length - 1; i >= 0; i--) {
+          if (history[i] === 1) currentStreak++;
+          else break;
+        }
+      }
+    }
+
     let newStreak = currentStreak;
     if (!wasCompleted && nowCompleted) {
       newStreak = currentStreak + 1;
     } else if (wasCompleted && !nowCompleted) {
       newStreak = Math.max(0, currentStreak - 1);
     }
-    console.log('STREAK DEBUG:', { habitName: habit.name, wasCompleted, nowCompleted, currentStreak, newStreak });
+    console.log('STREAK DEBUG:', { habitName: habit.name, wasCompleted, nowCompleted, currentStreak, newStreak, history: habit.history });
 
     // Optimistic update
     setHabits(habits.map(h =>
