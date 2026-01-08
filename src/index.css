@@ -8,7 +8,29 @@ html, body, #root {
   height: 100%;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   background-color: #0a0a0a;
+  overflow-x: hidden;
+}
+
+/* Mobile fixed header with safe area support */
+.mobile-header {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: 0;
+  right: 0;
+  z-index: 1001;
+  background-color: #0a0a0a;
+  border-bottom: 1px solid #333;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+}
+
+/* Spacer to push content below fixed header */
+.mobile-header-spacer {
+  height: calc(135px + env(safe-area-inset-top, 0px));
 }
 

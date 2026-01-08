@@ -1,0 +1,28 @@
+{
+  "appId": "app.habitos",
+  "appName": "Habit_OS",
+  "webDir": "dist",
+  "ios": {
+    "scheme": "Habit_OS",
+    "contentInset": "automatic",
+    "preferredContentMode": "mobile",
+    "backgroundColor": "#0a0a0a"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0,
+      "backgroundColor": "#0a0a0a",
+      "showSpinner": false,
+      "launchAutoHide": false
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon",
+      "iconColor": "#00ff41",
+      "sound": "notification.wav"
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0a0a0a"
+    }
+  }
+}

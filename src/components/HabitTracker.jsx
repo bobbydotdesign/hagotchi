@@ -6,6 +6,20 @@ import BottomSheet from './BottomSheet';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { isNative, hideSplashScreen } from '../lib/capacitor';
+import {
+  hapticMedium,
+  hapticLight,
+  hapticSelection,
+  hapticError,
+  hapticSuccess,
+  hapticStreakMilestone
+} from '../services/haptics';
+import {
+  requestNotificationPermission,
+  scheduleAllHabitNotifications,
+  setupNotificationListeners
+} from '../services/notifications';
 
 // Design tokens - edit these to change the app's color scheme
 const COLORS = {
@@ -135,13 +149,19 @@ const HabitTracker = () => {
 
   const bootMessages = [
     '> HABIT_OS v2.5.0 initializing...',
-    '> loading neural pathways.......... OK',
-    '> scanning habit matrix............ OK', 
-    '> streak engine online............. OK',
-    '> cloud sync enabled............... OK',
+    '> mounting habit filesystem..... OK',
+    '> loading neural pathways...... OK',
+    '> calibrating streak engine.... OK',
+    '> scanning habit matrix........ OK',
+    '> indexing completion history.. OK',
+    '> syncing cloud data........... OK',
+    '> loading user preferences..... OK',
+    '> all systems operational.',
     '> welcome back, operator.',
-    ''
+    '',
+    '> ready_'
   ];
+  const [bootFading, setBootFading] = useState(false);
 
   const icons = ['◎', '▣', '△', '▢', '○', '◇', '▽', '□', '●', '◆'];
 
@@ -447,14 +467,23 @@ const HabitTracker = () => {
 
   useEffect(() => {
     if (bootSequence && bootLine < bootMessages.length) {
+      // Longer pause on "ready" line
+      const isReadyLine = bootMessages[bootLine]?.includes('ready');
+      const delay = bootLine === 0 ? 400 : isReadyLine ? 1200 : 250;
       const timer = setTimeout(() => {
         setBootLine(prev => prev + 1);
-      }, bootLine === 0 ? 400 : 300);
+      }, delay);
       return () => clearTimeout(timer);
-    } else if (bootLine >= bootMessages.length) {
-      setTimeout(() => setBootSequence(false), 600);
+    } else if (bootLine >= bootMessages.length && !bootFading) {
+      // Start fade out
+      setBootFading(true);
+      setTimeout(() => {
+        setBootSequence(false);
+        // Hide native splash screen after boot animation
+        hideSplashScreen();
+      }, 800);
     }
-  }, [bootLine, bootSequence]);
+  }, [bootLine, bootSequence, bootFading]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -550,6 +579,35 @@ const HabitTracker = () => {
     return () => { cancelled = true; };
   }, [selectedDate, user, isToday, getCompletionsForDate]);
 
+  // Request notification permission when user authenticates (native only)
+  useEffect(() => {
+    if (user && isNative) {
+      requestNotificationPermission();
+    }
+  }, [user]);
+
+  // Schedule notifications when habits change (native only)
+  useEffect(() => {
+    if (user && habits.length > 0 && isNative) {
+      scheduleAllHabitNotifications(habits);
+    }
+  }, [habits, user]);
+
+  // Setup notification tap listener (native only)
+  useEffect(() => {
+    if (!isNative) return;
+
+    const cleanup = setupNotificationListeners((habitId) => {
+      // Scroll to or highlight the tapped habit
+      const habitElement = document.querySelector(`[data-habit-id="${habitId}"]`);
+      if (habitElement) {
+        habitElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+
+    return cleanup;
+  }, []);
+
   // Get completions count for a habit on the selected date
   const getHabitCompletions = (habit) => {
     if (isToday) {
@@ -600,6 +658,9 @@ const HabitTracker = () => {
     const { active, over } = event;
 
     if (active.id !== over?.id) {
+      // Haptic feedback for successful reorder
+      hapticSelection();
+
       const oldIndex = habits.findIndex(h => h.id === active.id);
       const newIndex = habits.findIndex(h => h.id === over.id);
 
@@ -928,6 +989,9 @@ const HabitTracker = () => {
     const habit = habits.find(h => h.id === id);
     if (!habit) return;
 
+    // Add haptic feedback
+    hapticMedium();
+
     const dailyGoal = habit.daily_goal || 1;
 
     // Handle past date completions differently
@@ -1156,11 +1220,13 @@ const HabitTracker = () => {
     if (isValidSwipe) {
       if (swipeX > SWIPE_THRESHOLD || (swipeX > 30 && velocity > SWIPE_VELOCITY_THRESHOLD)) {
         // Swipe right - toggle completion
+        hapticMedium();
         setCompletedAnimation(habitId);
         setTimeout(() => setCompletedAnimation(null), 300);
         incrementHabit(habitId);
       } else if (swipeX < -SWIPE_THRESHOLD || (swipeX < -30 && velocity > SWIPE_VELOCITY_THRESHOLD)) {
         // Swipe left - delete (with confirmation)
+        hapticError();
         setConfirmingDeleteId(habitId);
       }
     }
@@ -1173,6 +1239,7 @@ const HabitTracker = () => {
   // Tap handler for quick completion toggle
   const handleTap = (habitId) => {
     if (!isMobile) return;
+    hapticLight();
     setCompletedAnimation(habitId);
     setTimeout(() => setCompletedAnimation(null), 200);
     incrementHabit(habitId);
@@ -1193,6 +1260,15 @@ const HabitTracker = () => {
   }, 0);
   const completionPercent = habitsForSelectedDate.length > 0 ? Math.round((totalProgress / habitsForSelectedDate.length) * 100) : 0;
 
+  // Track previous completion percent to detect when it reaches 100%
+  const prevCompletionPercentRef = useRef(0);
+  useEffect(() => {
+    if (completionPercent === 100 && prevCompletionPercentRef.current < 100 && habitsForSelectedDate.length > 0 && isToday) {
+      hapticSuccess();
+    }
+    prevCompletionPercentRef.current = completionPercent;
+  }, [completionPercent, habitsForSelectedDate.length, isToday]);
+
   const generateProgressBar = (percent, width = 20) => {
     const filled = Math.round((percent / 100) * width);
     const empty = width - filled;
@@ -1209,20 +1285,31 @@ const HabitTracker = () => {
         padding: '40px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        opacity: bootFading ? 0 : 1,
+        transition: 'opacity 0.6s ease-out',
       }}>
         <div style={{ maxWidth: '600px', width: '100%' }}>
-          {bootMessages.slice(0, bootLine).map((msg, i) => (
-            <div key={i} style={{
-              marginBottom: '8px',
-              opacity: i < bootLine - 1 ? 0.6 : 1,
-              fontSize: '14px',
-              letterSpacing: '0.5px'
-            }}>
-              {msg}
-            </div>
-          ))}
-          {bootLine < bootMessages.length && (
+          {bootMessages.slice(0, bootLine).map((msg, i) => {
+            const isReady = msg.includes('ready');
+            return (
+              <div key={i} style={{
+                marginBottom: '8px',
+                opacity: i < bootLine - 1 ? 0.5 : 1,
+                fontSize: '14px',
+                letterSpacing: '0.5px',
+                textShadow: isReady ? '0 0 10px #00ff41' : 'none',
+              }}>
+                {isReady ? (
+                  <>
+                    {'> ready'}
+                    <span style={{ opacity: cursorBlink ? 1 : 0 }}>_</span>
+                  </>
+                ) : msg}
+              </div>
+            );
+          })}
+          {bootLine < bootMessages.length && !bootMessages[bootLine - 1]?.includes('ready') && (
             <span style={{ opacity: cursorBlink ? 1 : 0 }}>▌</span>
           )}
         </div>
@@ -1497,9 +1584,7 @@ const HabitTracker = () => {
       backgroundColor: '#0a0a0a',
       fontFamily: '"IBM Plex Mono", "Fira Code", "SF Mono", monospace',
       color: '#c0c0c0',
-      padding: isMobile ? '12px' : '20px',
-      position: 'relative',
-      overflow: 'hidden'
+      padding: isMobile ? '0 20px 20px' : '32px',
     }}>
       {/* Scanline effect */}
       <div style={{
@@ -1526,23 +1611,18 @@ const HabitTracker = () => {
       }} />
 
       {/* Header Container - sticky on mobile only */}
-      <div style={{
-        ...(isMobile ? {
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1001,
-          boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
-        } : {
-          maxWidth: '700px',
-          margin: '0 auto',
-          marginBottom: '24px',
-        }),
-        backgroundColor: '#0a0a0a',
-        borderBottom: isMobile ? '1px solid #333' : 'none',
-      }}>
-        <div style={{ maxWidth: '700px', margin: '0 auto', padding: isMobile ? '8px 12px' : '0' }}>
+      <div
+        className={isMobile ? 'mobile-header' : ''}
+        style={{
+          ...(!isMobile && {
+            maxWidth: '700px',
+            margin: '0 auto',
+            marginBottom: '24px',
+          }),
+          backgroundColor: '#0a0a0a',
+          borderBottom: isMobile ? '1px solid #333' : 'none',
+        }}>
+        <div style={{ maxWidth: '700px', margin: '0 auto', padding: isMobile ? '8px 20px' : '0' }}>
           {/* Top row: Logo on left, Menu on right */}
           <div style={{
             display: 'flex',
@@ -1754,8 +1834,8 @@ const HabitTracker = () => {
         </div>
       </div>
 
-      {/* Spacer for sticky header - mobile only */}
-      {isMobile && <div style={{ height: '140px' }} />}
+      {/* Spacer for sticky header - mobile only - matches fixed header height */}
+      {isMobile && <div className="mobile-header-spacer" />}
 
       <div style={{ maxWidth: '700px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
         {/* Navigation */}
@@ -1926,6 +2006,7 @@ const HabitTracker = () => {
               <SortableItem key={habit.id} id={habit.id} disabled={isMobile}>
                 {({ listeners, isDragging }) => (
               <div
+                data-habit-id={habit.id}
                 style={{
                   position: 'relative',
                   overflow: isMobile ? 'hidden' : 'visible',
@@ -2476,7 +2557,7 @@ const HabitTracker = () => {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="new password"
-            autoFocus
+            autoFocus={!isMobile}
             style={{
               width: '100%',
               padding: '12px',
@@ -2715,7 +2796,7 @@ const HabitTracker = () => {
               value={newHabitName}
               onChange={(e) => setNewHabitName(e.target.value)}
               placeholder="enter habit name..."
-              autoFocus
+              autoFocus={!isMobile}
               style={{
                 flex: 1,
                 padding: '12px',
@@ -2909,7 +2990,7 @@ const HabitTracker = () => {
               value={editHabitName}
               onChange={(e) => setEditHabitName(e.target.value)}
               placeholder="enter habit name..."
-              autoFocus
+              autoFocus={!isMobile}
               style={{
                 flex: 1,
                 padding: '12px',

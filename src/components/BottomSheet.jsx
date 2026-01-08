@@ -128,7 +128,7 @@ const BottomSheet = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: isMobile ? '24px 32px' : '24px 40px',
+            padding: isMobile ? '16px 20px 12px' : '20px 32px 16px',
             flexShrink: 0,
           }}
         >
@@ -182,7 +182,7 @@ const BottomSheet = ({
         {/* Content */}
         <div
           style={{
-            padding: isMobile ? '24px 32px' : '32px 40px',
+            padding: isMobile ? '8px 20px 20px' : '16px 32px 32px',
             overflowY: 'auto',
             flex: 1,
             // Custom scrollbar for terminal aesthetic

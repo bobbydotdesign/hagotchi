@@ -1,8 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
+import { Capacitor } from '@capacitor/core'
 
 // Get environment variables - Vite requires VITE_ prefix
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.SUPABASE_ANON_KEY
+
+// Get redirect URL based on platform
+const getRedirectUrl = () => {
+  if (Capacitor.isNativePlatform()) {
+    return 'habitos://auth/callback';
+  }
+  return typeof window !== 'undefined'
+    ? `${window.location.protocol}//${window.location.host}`
+    : undefined;
+};
 
 // Debug logging (remove in production if desired)
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
@@ -39,7 +50,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    redirectTo: getRedirectUrl()
   }
 })
 

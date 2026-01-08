@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <rect width="1024" height="1024" fill="#0a0a0a"/>
+
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="blur1"/>
+      <feGaussianBlur stdDeviation="25" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Pixel art H made of square dots - 30% smaller with glow -->
+  <g fill="#00ff41" filter="url(#glow)">
+    <!-- Left column -->
+    <rect x="310" y="262" width="71" height="71" rx="7"/>
+    <rect x="310" y="348" width="71" height="71" rx="7"/>
+    <rect x="310" y="434" width="71" height="71" rx="7"/>
+    <rect x="310" y="520" width="71" height="71" rx="7"/>
+    <rect x="310" y="606" width="71" height="71" rx="7"/>
+    <rect x="310" y="692" width="71" height="71" rx="7"/>
+
+    <!-- Right column -->
+    <rect x="643" y="262" width="71" height="71" rx="7"/>
+    <rect x="643" y="348" width="71" height="71" rx="7"/>
+    <rect x="643" y="434" width="71" height="71" rx="7"/>
+    <rect x="643" y="520" width="71" height="71" rx="7"/>
+    <rect x="643" y="606" width="71" height="71" rx="7"/>
+    <rect x="643" y="692" width="71" height="71" rx="7"/>
+
+    <!-- Middle bar -->
+    <rect x="396" y="477" width="71" height="71" rx="7"/>
+    <rect x="476" y="477" width="71" height="71" rx="7"/>
+    <rect x="557" y="477" width="71" height="71" rx="7"/>
+  </g>
+</svg>

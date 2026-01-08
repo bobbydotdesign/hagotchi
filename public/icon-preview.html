@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Habit_OS App Icon</title>
+  <style>
+    body {
+      background: #1a1a1a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: -apple-system, sans-serif;
+      color: #fff;
+      padding: 40px;
+    }
+
+    h1 { color: #00ff41; margin-bottom: 10px; }
+    p { color: #666; margin-top: 0; }
+    .size-label { text-align: center; color: #666; font-size: 14px; margin-top: 10px; }
+
+    .icon-box {
+      width: 1024px;
+      height: 1024px;
+      background: #0a0a0a;
+      border-radius: 224px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin: 20px;
+    }
+
+    .sizes {
+      display: flex;
+      align-items: end;
+      gap: 30px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 40px;
+    }
+
+    .icon-small {
+      background: #0a0a0a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .icon-256 { width: 256px; height: 256px; border-radius: 56px; }
+    .icon-128 { width: 128px; height: 128px; border-radius: 28px; }
+  </style>
+</head>
+<body>
+  <h1>Habit_OS App Icon - Pixel Art</h1>
+  <p>Screenshot the 1024px version for App Store</p>
+
+  <div class="icon-box">
+    <svg viewBox="0 0 100 100" width="750" height="750">
+      <defs>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+
+      <!-- Pixel art H made of square dots -->
+      <g fill="#00ff41" filter="url(#glow)">
+        <!-- Left column -->
+        <rect x="22" y="15" width="10" height="10" rx="1"/>
+        <rect x="22" y="27" width="10" height="10" rx="1"/>
+        <rect x="22" y="39" width="10" height="10" rx="1"/>
+        <rect x="22" y="51" width="10" height="10" rx="1"/>
+        <rect x="22" y="63" width="10" height="10" rx="1"/>
+        <rect x="22" y="75" width="10" height="10" rx="1"/>
+
+        <!-- Right column -->
+        <rect x="68" y="15" width="10" height="10" rx="1"/>
+        <rect x="68" y="27" width="10" height="10" rx="1"/>
+        <rect x="68" y="39" width="10" height="10" rx="1"/>
+        <rect x="68" y="51" width="10" height="10" rx="1"/>
+        <rect x="68" y="63" width="10" height="10" rx="1"/>
+        <rect x="68" y="75" width="10" height="10" rx="1"/>
+
+        <!-- Middle bar -->
+        <rect x="34" y="45" width="10" height="10" rx="1"/>
+        <rect x="45" y="45" width="10" height="10" rx="1"/>
+        <rect x="56" y="45" width="10" height="10" rx="1"/>
+      </g>
+    </svg>
+  </div>
+  <div class="size-label">1024 × 1024 (App Store) - Screenshot this one</div>
+
+  <div class="sizes">
+    <div>
+      <div class="icon-small icon-128">
+        <svg viewBox="0 0 100 100" width="80" height="80">
+          <g fill="#00ff41">
+            <rect x="25" y="20" width="8" height="8" rx="1"/>
+            <rect x="25" y="30" width="8" height="8" rx="1"/>
+            <rect x="25" y="40" width="8" height="8" rx="1"/>
+            <rect x="25" y="50" width="8" height="8" rx="1"/>
+            <rect x="25" y="60" width="8" height="8" rx="1"/>
+            <rect x="25" y="70" width="8" height="8" rx="1"/>
+            <rect x="67" y="20" width="8" height="8" rx="1"/>
+            <rect x="67" y="30" width="8" height="8" rx="1"/>
+            <rect x="67" y="40" width="8" height="8" rx="1"/>
+            <rect x="67" y="50" width="8" height="8" rx="1"/>
+            <rect x="67" y="60" width="8" height="8" rx="1"/>
+            <rect x="67" y="70" width="8" height="8" rx="1"/>
+            <rect x="35" y="45" width="8" height="8" rx="1"/>
+            <rect x="46" y="45" width="8" height="8" rx="1"/>
+            <rect x="57" y="45" width="8" height="8" rx="1"/>
+          </g>
+        </svg>
+      </div>
+      <div class="size-label">128px</div>
+    </div>
+    <div>
+      <div class="icon-small icon-256">
+        <svg viewBox="0 0 100 100" width="160" height="160">
+          <g fill="#00ff41">
+            <rect x="25" y="20" width="8" height="8" rx="1"/>
+            <rect x="25" y="30" width="8" height="8" rx="1"/>
+            <rect x="25" y="40" width="8" height="8" rx="1"/>
+            <rect x="25" y="50" width="8" height="8" rx="1"/>
+            <rect x="25" y="60" width="8" height="8" rx="1"/>
+            <rect x="25" y="70" width="8" height="8" rx="1"/>
+            <rect x="67" y="20" width="8" height="8" rx="1"/>
+            <rect x="67" y="30" width="8" height="8" rx="1"/>
+            <rect x="67" y="40" width="8" height="8" rx="1"/>
+            <rect x="67" y="50" width="8" height="8" rx="1"/>
+            <rect x="67" y="60" width="8" height="8" rx="1"/>
+            <rect x="67" y="70" width="8" height="8" rx="1"/>
+            <rect x="35" y="45" width="8" height="8" rx="1"/>
+            <rect x="46" y="45" width="8" height="8" rx="1"/>
+            <rect x="57" y="45" width="8" height="8" rx="1"/>
+          </g>
+        </svg>
+      </div>
+      <div class="size-label">256px</div>
+    </div>
+  </div>
+</body>
+</html>
