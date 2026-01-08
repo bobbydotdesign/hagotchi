@@ -1,5 +1,5 @@
 {
-  "name": "habito",
+  "name": "hagotchi",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -35,3 +35,4 @@
     "vite": "^5.0.0"
   }
 }
+

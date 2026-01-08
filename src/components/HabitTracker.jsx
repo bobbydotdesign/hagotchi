@@ -149,7 +149,7 @@ const HabitTracker = () => {
   }, [openMenuId]);
 
   const bootMessages = [
-    '> HABIT_OS v2.5.0 initializing...',
+    '> HAGOTCHI v2.5.0 initializing...',
     '> mounting habit filesystem..... OK',
     '> loading neural pathways...... OK',
     '> calibrating streak engine.... OK',
@@ -1589,7 +1589,7 @@ const HabitTracker = () => {
             fontSize: '10px',
             color: '#333'
           }}>
-            HABIT_OS v2.5.0 • consistency compounds
+            HAGOTCHI v2.5.0 • consistency compounds
           </div>
         </div>
 
@@ -3626,7 +3626,7 @@ const HabitTracker = () => {
           display: 'flex',
           justifyContent: 'space-between'
         }}>
-          <span>HABIT_OS v2.5.0</span>
+          <span>HAGOTCHI v2.5.0</span>
           <span>consistency compounds</span>
         </div>
         )}

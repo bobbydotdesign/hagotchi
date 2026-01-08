@@ -1,4 +1,4 @@
-# Habito Troubleshooting Guide
+# Hagotchi Troubleshooting Guide
 
 Lessons learned from debugging session - January 2026.
 

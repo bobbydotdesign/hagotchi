@@ -1,9 +1,9 @@
 {
-  "appId": "app.habitos",
-  "appName": "Habit_OS",
+  "appId": "com.hagotchi.app",
+  "appName": "Hagotchi",
   "webDir": "dist",
   "ios": {
-    "scheme": "Habit_OS",
+    "scheme": "Hagotchi",
     "contentInset": "automatic",
     "preferredContentMode": "mobile",
     "backgroundColor": "#0a0a0a",

@@ -1,7 +1,7 @@
-# Habito - Claude Context
+# Hagotchi - Claude Context
 
 ## Project Overview
-A habit tracking app with a retro terminal aesthetic (green on black, monospace fonts). Built with React + Vite, uses Supabase for backend.
+Hagotchi (hagotchi.com) - A habit tracking app with a retro terminal aesthetic (green on black, monospace fonts). Built with React + Vite, uses Supabase for backend.
 
 ## Key Architecture Decisions
 
@@ -65,8 +65,8 @@ Streaks are calculated from the `completions` table, NOT the `habits.streak` fie
 ## iOS Native App (Capacitor)
 
 ### Setup
-- App ID: `app.habitos`
-- App Name: `Habit_OS`
+- App ID: `com.hagotchi.app`
+- App Name: `Hagotchi`
 - Uses Capacitor 6.x to wrap the React web app
 - iOS project in `ios/App/`
 
