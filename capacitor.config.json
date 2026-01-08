@@ -6,7 +6,9 @@
     "scheme": "Habit_OS",
     "contentInset": "automatic",
     "preferredContentMode": "mobile",
-    "backgroundColor": "#0a0a0a"
+    "backgroundColor": "#0a0a0a",
+    "scrollEnabled": true,
+    "allowsLinkPreview": false
   },
   "plugins": {
     "SplashScreen": {
@@ -23,6 +25,9 @@
     "StatusBar": {
       "style": "DARK",
       "backgroundColor": "#0a0a0a"
+    },
+    "Keyboard": {
+      "resize": "none"
     }
   }
 }

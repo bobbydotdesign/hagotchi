@@ -1103,16 +1103,23 @@ const HabitTracker = () => {
 
     if (error) {
       console.error('Error adding habit:', error);
-    } else {
-      setHabits([...habits, data]);
+      setSyncing(false);
+      return;
     }
 
+    // Close modal and reset form FIRST
     setNewHabitName('');
     setNewHabitGoal(1);
     setNewHabitTime('');
     setNewHabitDays([0,1,2,3,4,5,6]);
     setShowAddModal(false);
     setSyncing(false);
+
+    // Wait for modal animation to complete (300ms), then update habits
+    // This prevents layout shift on iOS caused by simultaneous modal close + state update
+    setTimeout(() => {
+      setHabits(prev => [...prev, data]);
+    }, 350);
   };
 
   const deleteHabit = async (id) => {
@@ -1143,6 +1150,7 @@ const HabitTracker = () => {
   const updateHabit = async () => {
     if (!editHabitName.trim() || !editingHabit) return;
 
+    const habitId = editingHabit.id;
     const updates = {
       name: editHabitName.toLowerCase(),
       daily_goal: editHabitGoal,
@@ -1150,29 +1158,33 @@ const HabitTracker = () => {
       scheduled_days: editHabitDays
     };
 
-    // Optimistic update
-    setHabits(habits.map(h =>
-      h.id === editingHabit.id ? { ...h, ...updates } : h
-    ));
-
     setSyncing(true);
     const { error } = await supabase
       .from('habits')
       .update(updates)
-      .eq('id', editingHabit.id);
+      .eq('id', habitId);
 
     if (error) {
       console.error('Error updating habit:', error);
-      // Revert on error
-      setHabits(habits);
+      setSyncing(false);
+      return;
     }
 
+    // Close modal and reset form FIRST
     setEditingHabit(null);
     setEditHabitName('');
     setEditHabitGoal(1);
     setEditHabitTime('');
     setEditHabitDays([0,1,2,3,4,5,6]);
     setSyncing(false);
+
+    // Wait for modal animation to complete (300ms), then update habits
+    // This prevents layout shift on iOS caused by simultaneous modal close + state update
+    setTimeout(() => {
+      setHabits(prev => prev.map(h =>
+        h.id === habitId ? { ...h, ...updates } : h
+      ));
+    }, 350);
   };
 
   // Swipe gesture handlers for native mobile experience
@@ -1579,13 +1591,16 @@ const HabitTracker = () => {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#0a0a0a',
-      fontFamily: '"IBM Plex Mono", "Fira Code", "SF Mono", monospace',
-      color: '#c0c0c0',
-      padding: isMobile ? '0 20px 20px' : '32px',
-    }}>
+    <div
+      className={isMobile ? 'mobile-app-container' : ''}
+      style={{
+        minHeight: isMobile ? undefined : '100vh',
+        height: isMobile ? '100%' : undefined,
+        backgroundColor: '#0a0a0a',
+        fontFamily: '"IBM Plex Mono", "Fira Code", "SF Mono", monospace',
+        color: '#c0c0c0',
+        padding: isMobile ? '0' : '32px',
+      }}>
       {/* Scanline effect */}
       <div style={{
         position: 'fixed',
@@ -1610,7 +1625,7 @@ const HabitTracker = () => {
         zIndex: 999
       }} />
 
-      {/* Header Container - sticky on mobile only */}
+      {/* Header Container - flex item at top on mobile */}
       <div
         className={isMobile ? 'mobile-header' : ''}
         style={{
@@ -1620,7 +1635,7 @@ const HabitTracker = () => {
             marginBottom: '24px',
           }),
           backgroundColor: '#0a0a0a',
-          borderBottom: isMobile ? '1px solid #333' : 'none',
+          boxShadow: isMobile ? '0 2px 12px rgba(0,0,0,0.6)' : 'none',
         }}>
         <div style={{ maxWidth: '700px', margin: '0 auto', padding: isMobile ? '8px 20px' : '0' }}>
           {/* Top row: Logo on left, Menu on right */}
@@ -1834,16 +1849,17 @@ const HabitTracker = () => {
         </div>
       </div>
 
-      {/* Spacer for sticky header - mobile only - matches fixed header height */}
-      {isMobile && <div className="mobile-header-spacer" />}
+      {/* Scrollable content area for mobile */}
+      <div className={isMobile ? 'mobile-content' : ''} style={isMobile ? { paddingLeft: '20px', paddingRight: '20px' } : undefined}>
 
       <div style={{ maxWidth: '700px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        {/* Navigation */}
+        {/* Navigation - Desktop only (mobile uses floating island) */}
+        {!isMobile && (
         <div style={{
           display: 'flex',
           gap: '4px',
           marginBottom: '16px',
-          fontSize: isMobile ? '10px' : '11px',
+          fontSize: '11px',
           alignItems: 'center'
         }}>
           {['today', 'activity'].map(view => (
@@ -1858,7 +1874,7 @@ const HabitTracker = () => {
                 border: '1px solid #333',
                 borderBottom: selectedView === view ? '1px solid #0d0d0d' : '1px solid #333',
                 color: selectedView === view ? '#00ff41' : '#666',
-                padding: isMobile ? '8px 12px' : '8px 16px',
+                padding: '8px 16px',
                 cursor: 'pointer',
                 fontFamily: 'inherit',
                 textTransform: 'uppercase',
@@ -1877,7 +1893,7 @@ const HabitTracker = () => {
                 background: 'transparent',
                 border: '1px solid #333',
                 color: canGoBack ? '#666' : '#333',
-                padding: isMobile ? '8px 10px' : '8px 12px',
+                padding: '8px 12px',
                 cursor: canGoBack ? 'pointer' : 'not-allowed',
                 fontFamily: 'inherit'
               }}
@@ -1892,7 +1908,7 @@ const HabitTracker = () => {
                 background: 'transparent',
                 border: '1px solid #333',
                 color: isToday ? '#333' : '#666',
-                padding: isMobile ? '8px 10px' : '8px 12px',
+                padding: '8px 12px',
                 cursor: isToday ? 'not-allowed' : 'pointer',
                 fontFamily: 'inherit'
               }}
@@ -1902,6 +1918,7 @@ const HabitTracker = () => {
             </button>
           </div>
         </div>
+        )}
 
         {/* Habits List - Only show on Today view */}
         {selectedView === 'today' && (
@@ -2493,8 +2510,8 @@ const HabitTracker = () => {
         </div>
         )}
 
-        {/* Add Habit Button - Only show on Today view */}
-        {selectedView === 'today' && (
+        {/* Add Habit Button - Desktop only, Today view only */}
+        {selectedView === 'today' && !isMobile && (
         <button
           onClick={() => setShowAddModal(true)}
           style={{
@@ -2530,6 +2547,101 @@ const HabitTracker = () => {
             habits={habits}
             isMobile={isMobile}
           />
+        )}
+
+      </div>
+      </div>
+
+      {/* Floating Island - Mobile only */}
+        {isMobile && (
+          <div className="floating-island">
+            {/* Navigation Arrows - Far Left */}
+            <div style={{ display: 'flex', gap: '2px' }}>
+              <button
+                onClick={() => navigateDate(-1)}
+                disabled={!canGoBack}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: canGoBack ? '#888' : '#333',
+                  fontSize: '16px',
+                  padding: '4px 10px',
+                  cursor: canGoBack ? 'pointer' : 'not-allowed',
+                  fontFamily: 'inherit',
+                }}
+                title="Previous day"
+              >
+                ←
+              </button>
+              <button
+                onClick={() => navigateDate(1)}
+                disabled={isToday}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: isToday ? '#333' : '#888',
+                  fontSize: '16px',
+                  padding: '4px 10px',
+                  cursor: isToday ? 'not-allowed' : 'pointer',
+                  fontFamily: 'inherit',
+                }}
+                title="Next day"
+              >
+                →
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div style={{ width: '1px', height: '20px', backgroundColor: '#333' }} />
+
+            {/* Today/Activity Tabs - Center */}
+            <div style={{ display: 'flex', gap: '4px', flex: 1, justifyContent: 'center' }}>
+              {['today', 'activity'].map(view => (
+                <button
+                  key={view}
+                  onClick={() => {
+                    setSelectedView(view);
+                    if (view === 'today') setSelectedDate(today);
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: selectedView === view ? '#00ff41' : '#666',
+                    fontSize: '10px',
+                    padding: '4px 8px',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    textShadow: selectedView === view ? '0 0 8px #00ff41' : 'none',
+                  }}
+                >
+                  {view === 'today' ? formatDateLabel(selectedDate) : view}
+                </button>
+              ))}
+            </div>
+
+            {/* Divider */}
+            <div style={{ width: '1px', height: '20px', backgroundColor: '#333' }} />
+
+            {/* Add Button - Right */}
+            <button
+              onClick={() => setShowAddModal(true)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#00ff41',
+                fontSize: '20px',
+                padding: '4px 8px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                lineHeight: 1,
+              }}
+              title="Add new habit"
+            >
+              +
+            </button>
+          </div>
         )}
 
         {/* Password Reset Modal */}
@@ -2807,7 +2919,15 @@ const HabitTracker = () => {
                 fontSize: '14px',
                 outline: 'none'
               }}
-              onKeyDown={(e) => e.key === 'Enter' && addHabit()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (isMobile) {
+                    e.target.blur(); // Close keyboard on mobile
+                  } else {
+                    addHabit();
+                  }
+                }
+              }}
             />
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ color: '#fff', fontSize: '11px' }}>×</span>
@@ -3001,7 +3121,15 @@ const HabitTracker = () => {
                 fontSize: '14px',
                 outline: 'none'
               }}
-              onKeyDown={(e) => e.key === 'Enter' && updateHabit()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (isMobile) {
+                    e.target.blur(); // Close keyboard on mobile
+                  } else {
+                    updateHabit();
+                  }
+                }
+              }}
             />
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ color: '#fff', fontSize: '11px' }}>×</span>
@@ -3238,7 +3366,8 @@ const HabitTracker = () => {
           </div>
         </BottomSheet>
 
-        {/* Footer */}
+        {/* Footer - Desktop only (mobile has floating island) */}
+        {!isMobile && (
         <div style={{
           marginTop: '32px',
           paddingTop: '16px',
@@ -3251,7 +3380,7 @@ const HabitTracker = () => {
           <span>HABIT_OS v2.5.0</span>
           <span>consistency compounds</span>
         </div>
-      </div>
+        )}
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap');

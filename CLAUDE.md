@@ -73,10 +73,17 @@ Streaks are calculated from the `completions` table, NOT the `habits.streak` fie
 ### Safe Area Handling
 **Critical**: iOS safe areas (Dynamic Island, notch) require careful handling:
 - `capacitor.config.json` has `contentInset: "automatic"` which handles some safe area adjustments
-- The mobile header uses CSS `top: env(safe-area-inset-top)` to position below the Dynamic Island
+- The mobile header uses CSS `top: 0` with `padding-top: env(safe-area-inset-top)`
 - The header spacer uses `height: calc(135px + env(safe-area-inset-top))` to push content below
-- **Do NOT use padding-top for safe area on the header** - use `top` positioning instead
-- `overflow: hidden` or `overflow-x: hidden` on parent containers breaks `position: fixed` in iOS WebView - avoid these on the main container
+- The floating island uses `bottom: calc(env(safe-area-inset-bottom) + 16px)`
+
+### iOS WebView Scroll & Fixed Positioning
+**Critical**: iOS WebView has issues with `position: fixed` and scroll:
+- To prevent viewport bounce/shift when scrolling: set `html, body { overflow: hidden; position: fixed; width: 100%; }`
+- Make `#root` the scroll container: `overflow-y: auto; overscroll-behavior-y: none;`
+- Fixed elements need GPU acceleration to prevent jitter: `transform: translateZ(0); -webkit-backface-visibility: hidden;`
+- Use `minHeight: 'auto'` on mobile containers (not `100vh`) to prevent unnecessary scroll
+- Add inline styles for `position: fixed` on mobile as backup to CSS classes
 
 ### Splash Screen
 - Configured to NOT auto-hide (`launchAutoHide: false`)
@@ -85,9 +92,18 @@ Streaks are calculated from the `completions` table, NOT the `habits.streak` fie
 
 ### Mobile Header
 - Uses `.mobile-header` CSS class (defined in `index.css`)
-- Fixed position at top with safe area offset
+- Fixed position at top with safe area offset via `padding-top: env(safe-area-inset-top)`
 - Spacer div with `.mobile-header-spacer` class pushes content below header
 - Header height is approximately 135px (without safe area)
+- Also has inline styles on mobile for `position: fixed` as backup
+
+### Floating Island (Mobile Navigation)
+- Uses `.floating-island` CSS class for bottom navigation bar
+- Contains: navigation arrows (←→), today/activity tabs, add habit button (+)
+- Fixed position at bottom with safe area offset
+- Spacer div with `.floating-island-spacer` class prevents content from being hidden behind it
+- Square corners to match terminal aesthetic
+- Layout: arrows on left, tabs centered, + button on right
 
 ### Boot Animation
 - Shows terminal-style boot messages on app launch
@@ -108,6 +124,52 @@ Streaks are calculated from the `completions` table, NOT the `habits.streak` fie
 ## BottomSheet Component
 - Slides up from bottom on mobile, centered modal on desktop
 - Takes `isMobile` prop to determine behavior
-- Has safe area padding at bottom for iPhone home indicator
+- Has safe area padding at bottom for iPhone home indicator (hidden when keyboard open)
 - Header padding: `16px 20px 12px` on mobile
 - Content padding: `8px 20px 20px` on mobile
+
+### iOS Keyboard Handling
+**Critical**: iOS keyboard handling requires specific configuration to prevent layout issues:
+
+**The Problem**: When the keyboard opens on iOS, it can cause:
+1. Fixed-position headers to shift down
+2. Input fields to be hidden behind the keyboard
+
+**The Solution** (implemented in BottomSheet.jsx):
+
+1. **Capacitor Keyboard Plugin** (`@capacitor/keyboard`):
+   - Set `resize: "none"` in capacitor.config.json to prevent WebView resizing (which causes header shift)
+   - Use `Keyboard.setAccessoryBarVisible({ isVisible: false })` to hide the iOS autocomplete bar
+
+2. **Move sheet up when keyboard opens**:
+   - Listen to `keyboardWillShow` event to get keyboard height
+   - Apply `transform: translateY(-${keyboardHeight}px)` to move the sheet up
+   - This positions the sheet directly above the keyboard
+
+3. **Hide safe area spacer when keyboard is open**:
+   - The bottom safe area padding (for home indicator) is not needed when keyboard is visible
+   - Conditionally render: `{isMobile && keyboardHeight === 0 && <SafeAreaSpacer />}`
+
+4. **Return key behavior on mobile**:
+   - On mobile, pressing Return should close the keyboard, not submit the form
+   - Use `onKeyDown` to check `if (isMobile) e.target.blur()` instead of submitting
+
+**Key code pattern** (BottomSheet.jsx):
+```javascript
+// Listen for keyboard
+const showListener = Keyboard.addListener('keyboardWillShow', (info) => {
+  setKeyboardHeight(info.keyboardHeight);
+});
+
+// Move sheet up with transform
+transform: isMobile
+  ? (isAnimating ? `translateY(-${keyboardHeight}px)` : 'translateY(100%)')
+  : ...
+```
+
+**capacitor.config.json**:
+```json
+"Keyboard": {
+  "resize": "none"
+}
+```

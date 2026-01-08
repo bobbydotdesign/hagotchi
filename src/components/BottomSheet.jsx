@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Keyboard } from '@capacitor/keyboard';
+import { isNative } from '../lib/capacitor';
 
 /**
  * BottomSheet Component
@@ -24,6 +26,48 @@ const BottomSheet = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
   const [cursorVisible, setCursorVisible] = useState(true);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const contentRef = useRef(null);
+  const sheetRef = useRef(null);
+
+  // Handle keyboard on iOS - adjust sheet position and scroll input into view
+  useEffect(() => {
+    if (!isOpen || !isMobile || !isNative) return;
+
+    // Hide the iOS keyboard accessory bar for cleaner UI
+    Keyboard.setAccessoryBarVisible({ isVisible: false });
+
+    const showListener = Keyboard.addListener('keyboardWillShow', (info) => {
+      setKeyboardHeight(info.keyboardHeight);
+
+      // After state update, scroll the focused input into view within the content area
+      setTimeout(() => {
+        const activeEl = document.activeElement;
+        if (activeEl && contentRef.current) {
+          const contentRect = contentRef.current.getBoundingClientRect();
+          const inputRect = activeEl.getBoundingClientRect();
+
+          // If input is below the visible area (keyboard covers it)
+          const visibleBottom = window.innerHeight - info.keyboardHeight;
+          if (inputRect.bottom > visibleBottom) {
+            // Scroll the content container
+            const scrollAmount = inputRect.bottom - visibleBottom + 20; // 20px padding
+            contentRef.current.scrollTop += scrollAmount;
+          }
+        }
+      }, 50);
+    });
+
+    const hideListener = Keyboard.addListener('keyboardWillHide', () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showListener.then(l => l.remove());
+      hideListener.then(l => l.remove());
+      Keyboard.setAccessoryBarVisible({ isVisible: true });
+    };
+  }, [isOpen, isMobile]);
 
   // Handle open/close animations
   useEffect(() => {
@@ -54,17 +98,8 @@ const BottomSheet = ({
     return () => clearInterval(interval);
   }, [showCursor]);
 
-  // Prevent body scroll when open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
+  // Note: Body scroll is already prevented via CSS (overflow: hidden on body)
+  // Removing the dynamic overflow toggle as it caused header shift on iOS
 
   if (!shouldRender) return null;
 
@@ -88,7 +123,7 @@ const BottomSheet = ({
         alignItems: isMobile ? 'flex-end' : 'center',
         justifyContent: 'center',
         zIndex: 2000,
-        transition: 'background-color 0.3s ease',
+        transition: 'background-color 0.3s ease, bottom 0.25s ease',
       }}
     >
       {/* Sheet Container */}
@@ -103,9 +138,9 @@ const BottomSheet = ({
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          // Animation
+          // Animation - move up when keyboard is open
           transform: isMobile
-            ? (isAnimating ? 'translateY(0)' : 'translateY(100%)')
+            ? (isAnimating ? `translateY(-${keyboardHeight}px)` : 'translateY(100%)')
             : (isAnimating ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.98)'),
           opacity: isAnimating ? 1 : 0,
           transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease',
@@ -181,10 +216,12 @@ const BottomSheet = ({
 
         {/* Content */}
         <div
+          ref={contentRef}
           style={{
             padding: isMobile ? '8px 20px 20px' : '16px 32px 32px',
             overflowY: 'auto',
             flex: 1,
+            WebkitOverflowScrolling: 'touch',
             // Custom scrollbar for terminal aesthetic
             scrollbarWidth: 'thin',
             scrollbarColor: '#333 #0d0d0d',
@@ -193,11 +230,11 @@ const BottomSheet = ({
           {children}
         </div>
 
-        {/* Safe Area Spacer for Mobile (iPhone home indicator) */}
-        {isMobile && (
+        {/* Safe Area Spacer for Mobile (iPhone home indicator) - hide when keyboard open */}
+        {isMobile && keyboardHeight === 0 && (
           <div
             style={{
-              paddingBottom: 'env(safe-area-inset-bottom, 32px)',
+              paddingBottom: 'env(safe-area-inset-bottom, 20px)',
               backgroundColor: '#0d0d0d',
               flexShrink: 0,
             }}
