@@ -127,6 +127,7 @@ const HabitTracker = () => {
     return !localStorage.getItem('habito_mobile_hint_seen');
   });
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [completedExpanded, setCompletedExpanded] = useState(false);
 
   // Handle responsive layout
   useEffect(() => {
@@ -513,6 +514,11 @@ const HabitTracker = () => {
   const today = getLocalDateString();
   const isToday = selectedDate === today;
 
+  // Auto-expand completed section when viewing past dates, collapse for today
+  useEffect(() => {
+    setCompletedExpanded(!isToday);
+  }, [isToday]);
+
   const formatDateLabel = (dateStr) => {
     if (dateStr === today) return 'today';
     const [year, month, day] = dateStr.split('-').map(Number);
@@ -629,6 +635,10 @@ const HabitTracker = () => {
     // Handle both number and string types from database
     return scheduledDays.some(d => Number(d) === viewedDay);
   };
+
+  // Split habits into incomplete and completed for the accordion UI
+  const incompleteHabits = habitsForSelectedDate.filter(h => !isHabitCompleted(h));
+  const completedHabits = habitsForSelectedDate.filter(h => isHabitCompleted(h));
 
   // Format time as compact string (8A, 8:30P)
   const formatScheduledTime = (timeString) => {
@@ -2016,10 +2026,10 @@ const HabitTracker = () => {
                 onDragEnd={handleDragEnd}
               >
                 <SortableContext
-                  items={habitsForSelectedDate.map(h => h.id)}
+                  items={incompleteHabits.map(h => h.id)}
                   strategy={verticalListSortingStrategy}
                 >
-              {habitsForSelectedDate.map((habit, index) => (
+              {incompleteHabits.map((habit, index) => (
               <SortableItem key={habit.id} id={habit.id} disabled={isMobile}>
                 {({ listeners, isDragging }) => (
               <div
@@ -2027,7 +2037,7 @@ const HabitTracker = () => {
                 style={{
                   position: 'relative',
                   overflow: isMobile ? 'hidden' : 'visible',
-                  borderBottom: index < habitsForSelectedDate.length - 1 ? '1px solid #222' : 'none'
+                  borderBottom: index < incompleteHabits.length - 1 || completedHabits.length > 0 ? '1px solid #222' : 'none'
                 }}
               >
                 {isMobile ? (
@@ -2505,6 +2515,245 @@ const HabitTracker = () => {
             ))}
                 </SortableContext>
               </DndContext>
+
+              {/* Completed Habits Accordion */}
+              {completedHabits.length > 0 && (
+                <>
+                  {/* Accordion Header */}
+                  <div
+                    onClick={() => {
+                      hapticLight();
+                      setCompletedExpanded(!completedExpanded);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: isMobile ? '12px 12px' : '10px 12px',
+                      cursor: 'pointer',
+                      userSelect: 'none',
+                      WebkitTapHighlightColor: 'transparent',
+                      transition: 'background-color 0.15s',
+                    }}
+                    onMouseEnter={(e) => { if (!isMobile) e.currentTarget.style.backgroundColor = 'rgba(0,255,65,0.03)'; }}
+                    onMouseLeave={(e) => { if (!isMobile) e.currentTarget.style.backgroundColor = 'transparent'; }}
+                  >
+                    {/* Chevron */}
+                    <span style={{
+                      color: completedExpanded ? '#00ff41' : '#666',
+                      fontSize: isMobile ? '10px' : '9px',
+                      transition: 'transform 0.2s ease, color 0.2s ease',
+                      transform: completedExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                      display: 'inline-block',
+                    }}>
+                      ▼
+                    </span>
+
+                    {/* Label */}
+                    <span style={{
+                      color: completedExpanded ? '#00ff41' : '#888',
+                      fontSize: isMobile ? '12px' : '11px',
+                      letterSpacing: '0.5px',
+                      transition: 'color 0.2s ease',
+                    }}>
+                      {completedHabits.length} Complete
+                    </span>
+                  </div>
+
+                  {/* Collapsible Content */}
+                  <div style={{
+                    overflow: 'hidden',
+                    maxHeight: completedExpanded ? `${completedHabits.length * 60}px` : '0',
+                    transition: 'max-height 0.3s ease-out, opacity 0.2s ease',
+                    opacity: completedExpanded ? 1 : 0,
+                  }}>
+                    {completedHabits.map((habit, index) => (
+                      <div
+                        key={habit.id}
+                        data-habit-id={habit.id}
+                        style={{
+                          position: 'relative',
+                          overflow: isMobile ? 'hidden' : 'visible',
+                          borderBottom: index < completedHabits.length - 1 ? '1px solid #222' : 'none'
+                        }}
+                      >
+                        {isMobile ? (
+                          /* Mobile: Completed habit row - no swipe actions */
+                          <div
+                            onClick={() => completedExpanded && handleTap(habit.id)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              padding: '14px 12px',
+                              gap: '8px',
+                              backgroundColor: 'rgba(0,255,65,0.03)',
+                              cursor: completedExpanded ? 'pointer' : 'default',
+                              userSelect: 'none',
+                              WebkitTapHighlightColor: 'transparent',
+                            }}
+                          >
+                            {/* Icon */}
+                            <span style={{
+                              fontSize: '18px',
+                              width: '24px',
+                              textAlign: 'center',
+                              color: '#00ff41',
+                              textShadow: '0 0 8px #00ff41',
+                            }}>
+                              {habit.icon}
+                            </span>
+
+                            {/* Name + Time badge */}
+                            <div style={{
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              minWidth: 0,
+                            }}>
+                              <span style={{
+                                color: '#00ff41',
+                                fontSize: '14px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {habit.name}
+                              </span>
+                              {formatScheduledTime(habit.scheduled_time) && (
+                                <span style={{
+                                  fontSize: '10px',
+                                  color: '#fff',
+                                  backgroundColor: 'rgba(255,255,255,0.05)',
+                                  padding: '2px 5px',
+                                  borderRadius: '3px',
+                                  flexShrink: 0,
+                                }}>
+                                  {formatScheduledTime(habit.scheduled_time)}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Progress dots */}
+                            <div style={{
+                              display: 'flex',
+                              gap: '3px',
+                              width: '32px',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}>
+                              {Array.from({ length: habit.daily_goal || 1 }).map((_, i) => (
+                                <span
+                                  key={i}
+                                  style={{
+                                    fontSize: '10px',
+                                    color: '#00ff41',
+                                    textShadow: '0 0 4px #00ff41'
+                                  }}
+                                >
+                                  ●
+                                </span>
+                              ))}
+                            </div>
+
+                            {/* Streak */}
+                            <span style={{
+                              width: '50px',
+                              textAlign: 'right',
+                              color: habit.streak > 7 ? '#00ff41' : habit.streak > 3 ? '#ffaa00' : '#888',
+                              fontSize: '12px',
+                              flexShrink: 0,
+                            }}>
+                              {habit.streak > 0 ? `${habit.streak}d 🔥` : ''}
+                            </span>
+                          </div>
+                        ) : (
+                          /* Desktop: Completed habit row */
+                          <div
+                            onClick={() => completedExpanded && incrementHabit(habit.id)}
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: '30px 1fr 50px 60px 28px',
+                              gap: '8px',
+                              alignItems: 'center',
+                              padding: '12px',
+                              backgroundColor: 'rgba(0,255,65,0.03)',
+                              transition: 'background 0.15s',
+                              cursor: completedExpanded ? 'pointer' : 'default'
+                            }}
+                          >
+                            {/* Icon */}
+                            <span style={{
+                              fontSize: '16px',
+                              color: '#00ff41',
+                              textShadow: '0 0 8px #00ff41',
+                            }}>
+                              {habit.icon}
+                            </span>
+
+                            {/* Name + Time badge */}
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                            }}>
+                              <span style={{
+                                color: '#00ff41',
+                                fontSize: '13px'
+                              }}>
+                                {habit.name}
+                              </span>
+                              {formatScheduledTime(habit.scheduled_time) && (
+                                <span style={{
+                                  fontSize: '10px',
+                                  color: '#fff',
+                                  backgroundColor: 'rgba(255,255,255,0.05)',
+                                  padding: '2px 5px',
+                                  borderRadius: '3px'
+                                }}>
+                                  {formatScheduledTime(habit.scheduled_time)}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Progress dots */}
+                            <div style={{
+                              display: 'flex',
+                              gap: '3px',
+                              justifyContent: 'center',
+                            }}>
+                              {Array.from({ length: habit.daily_goal || 1 }).map((_, i) => (
+                                <span
+                                  key={i}
+                                  style={{
+                                    fontSize: '10px',
+                                    color: '#00ff41',
+                                    textShadow: '0 0 4px #00ff41'
+                                  }}
+                                >
+                                  ●
+                                </span>
+                              ))}
+                            </div>
+
+                            {/* Streak */}
+                            <span style={{
+                              color: habit.streak > 7 ? '#00ff41' : habit.streak > 3 ? '#ffaa00' : '#888',
+                              fontSize: '12px',
+                              textAlign: 'right',
+                            }}>
+                              {habit.streak > 0 ? `${habit.streak}d 🔥` : ''}
+                            </span>
+
+                            {/* Empty space for menu column alignment */}
+                            <span></span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
@@ -3426,3 +3675,4 @@ const HabitTracker = () => {
 };
 
 export default HabitTracker;
+
