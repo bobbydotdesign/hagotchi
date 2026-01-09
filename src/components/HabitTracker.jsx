@@ -20,6 +20,13 @@ import {
   scheduleAllHabitNotifications,
   setupNotificationListeners
 } from '../services/notifications';
+import { useHagotchi } from '../hooks/useHagotchi';
+import {
+  HagotchiCompanion,
+  SkinCollection,
+  UnlockAnimation,
+  LoreArchive
+} from './hagotchi';
 
 // Design tokens - edit these to change the app's color scheme
 const COLORS = {
@@ -128,6 +135,12 @@ const HabitTracker = () => {
   });
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [completedExpanded, setCompletedExpanded] = useState(false);
+
+  // Hagotchi companion state
+  const [showSkinCollection, setShowSkinCollection] = useState(false);
+  const [showLoreArchive, setShowLoreArchive] = useState(false);
+  const [feedingAnimation, setFeedingAnimation] = useState(false);
+  const [lastVitalityGain, setLastVitalityGain] = useState(0);
 
   // Handle responsive layout
   useEffect(() => {
@@ -502,6 +515,18 @@ const HabitTracker = () => {
 
   // Hook for recording completions to activity tracking table
   const { recordCompletion, getCompletionsForDate } = useCompletions(user?.id);
+
+  // Hook for Hagotchi companion system
+  const {
+    spirit,
+    currentSkin,
+    feedSpirit,
+    updateStreak,
+    switchSkin,
+    pendingUnlock,
+    showUnlockAnimation,
+    closeUnlockAnimation
+  } = useHagotchi(user?.id);
 
   // Date navigation helpers - use local date to avoid timezone issues
   const getLocalDateString = (date = new Date()) => {
@@ -1083,6 +1108,16 @@ const HabitTracker = () => {
     } else {
       // Record to completions table for activity tracking
       await recordCompletion(id, newCompletions, dailyGoal);
+
+      // Feed the Hagotchi spirit when completing a habit (not un-completing)
+      if (!wasCompleted && nowCompleted) {
+        const result = await feedSpirit(newStreak);
+        if (result) {
+          setLastVitalityGain(result.vitalityGain);
+          setFeedingAnimation(true);
+          setTimeout(() => setFeedingAnimation(false), 1500);
+        }
+      }
     }
     setSyncing(false);
   };
@@ -1928,6 +1963,76 @@ const HabitTracker = () => {
             </button>
           </div>
         </div>
+        )}
+
+        {/* Hagotchi Companion - Only show on Today view */}
+        {selectedView === 'today' && spirit && currentSkin && (
+          <div style={{ marginBottom: '16px' }}>
+            <HagotchiCompanion
+              skin={currentSkin}
+              vitality={spirit.vitality}
+              isMobile={isMobile}
+              onTap={() => setShowSkinCollection(true)}
+              feeding={feedingAnimation}
+              vitalityGain={lastVitalityGain}
+            />
+            {/* Quick action buttons */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '8px',
+              marginTop: '8px',
+            }}>
+              <button
+                onClick={() => setShowSkinCollection(true)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #333',
+                  color: '#666',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  fontSize: '9px',
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.borderColor = '#00ff41';
+                  e.target.style.color = '#00ff41';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.borderColor = '#333';
+                  e.target.style.color = '#666';
+                }}
+              >
+                [skins {spirit.unlocked_skin_ids.length}/8]
+              </button>
+              <button
+                onClick={() => setShowLoreArchive(true)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #333',
+                  color: '#666',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  fontSize: '9px',
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.borderColor = '#00ff41';
+                  e.target.style.color = '#00ff41';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.borderColor = '#333';
+                  e.target.style.color = '#666';
+                }}
+              >
+                [lore]
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Habits List - Only show on Today view */}
@@ -3614,6 +3719,32 @@ const HabitTracker = () => {
             </button>
           </div>
         </BottomSheet>
+
+        {/* Hagotchi Skin Collection Modal */}
+        <SkinCollection
+          isOpen={showSkinCollection}
+          onClose={() => setShowSkinCollection(false)}
+          unlockedSkinIds={spirit?.unlocked_skin_ids || ['pixel_spirit']}
+          activeSkinId={spirit?.active_skin_id || 'pixel_spirit'}
+          onSelectSkin={switchSkin}
+          isMobile={isMobile}
+        />
+
+        {/* Hagotchi Lore Archive Modal */}
+        <LoreArchive
+          isOpen={showLoreArchive}
+          onClose={() => setShowLoreArchive(false)}
+          unlockedSkinIds={spirit?.unlocked_skin_ids || ['pixel_spirit']}
+          isMobile={isMobile}
+        />
+
+        {/* Hagotchi Unlock Animation */}
+        <UnlockAnimation
+          skinId={pendingUnlock}
+          isOpen={showUnlockAnimation}
+          onClose={closeUnlockAnimation}
+          isMobile={isMobile}
+        />
 
         {/* Footer - Desktop only (mobile has floating island) */}
         {!isMobile && (
