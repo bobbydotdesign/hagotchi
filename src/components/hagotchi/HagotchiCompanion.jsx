@@ -43,11 +43,10 @@ const HagotchiCompanion = ({
 
   const vitalityState = getVitalityState(vitality);
   const stateLabel = getVitalityStateLabel(vitality);
-  const art = skin.art[vitalityState] || skin.art.content;
 
   // Animation offset for bouncing effect (only when thriving/content)
   const bounceOffset = (vitalityState === 'thriving' || vitalityState === 'content')
-    ? Math.sin(animationFrame * Math.PI / 2) * 2
+    ? Math.sin(animationFrame * Math.PI / 2) * 3
     : 0;
 
   // Get state color
@@ -58,6 +57,17 @@ const HagotchiCompanion = ({
       case 'tired': return '#ffaa00';
       case 'dormant': return '#666';
       default: return '#00ff41';
+    }
+  };
+
+  // Get opacity based on vitality state
+  const getOpacity = () => {
+    switch (vitalityState) {
+      case 'thriving': return 1;
+      case 'content': return 0.9;
+      case 'tired': return 0.6;
+      case 'dormant': return 0.3;
+      default: return 1;
     }
   };
 
@@ -84,10 +94,10 @@ const HagotchiCompanion = ({
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-        marginBottom: '8px',
+        marginBottom: '12px',
       }}>
         <span style={{
-          fontSize: isMobile ? '11px' : '10px',
+          fontSize: isMobile ? '12px' : '11px',
           color: '#888',
           letterSpacing: '1px',
           textTransform: 'uppercase',
@@ -95,7 +105,7 @@ const HagotchiCompanion = ({
           {skin.name}
         </span>
         <span style={{
-          fontSize: '8px',
+          fontSize: '9px',
           color: getRarityColor(skin.rarity),
           textTransform: 'uppercase',
           letterSpacing: '0.5px',
@@ -104,24 +114,45 @@ const HagotchiCompanion = ({
         </span>
       </div>
 
-      {/* ASCII Art Character */}
+      {/* Character Image */}
       <div
         style={{
-          fontFamily: 'IBM Plex Mono, Fira Code, SF Mono, monospace',
-          fontSize: isMobile ? '14px' : '12px',
-          lineHeight: 1.2,
-          color: getStateColor(),
-          textShadow: vitalityState === 'thriving' ? '0 0 8px rgba(0, 255, 65, 0.5)' : 'none',
+          position: 'relative',
           transform: `translateY(${-bounceOffset}px)`,
           transition: isWakingUp ? 'all 0.5s ease' : 'transform 0.3s ease',
-          whiteSpace: 'pre',
-          textAlign: 'center',
-          opacity: isWakingUp ? [0.5, 1, 0.5, 1][animationFrame] : 1,
         }}
       >
-        {art.map((line, i) => (
-          <div key={i}>{line}</div>
-        ))}
+        <img
+          src={skin.image}
+          alt={skin.name}
+          style={{
+            width: isMobile ? '80px' : '64px',
+            height: isMobile ? '80px' : '64px',
+            imageRendering: 'pixelated',
+            opacity: getOpacity(),
+            filter: vitalityState === 'thriving'
+              ? 'drop-shadow(0 0 8px rgba(0, 255, 65, 0.6))'
+              : vitalityState === 'dormant'
+              ? 'grayscale(50%)'
+              : 'none',
+            transition: 'opacity 0.3s ease, filter 0.3s ease',
+          }}
+        />
+
+        {/* Sleeping ZZZ for dormant state */}
+        {vitalityState === 'dormant' && (
+          <div style={{
+            position: 'absolute',
+            top: '-5px',
+            right: '-10px',
+            fontSize: isMobile ? '14px' : '12px',
+            color: '#666',
+            fontFamily: 'monospace',
+            animation: 'pulse 2s ease-in-out infinite',
+          }}>
+            zzz
+          </div>
+        )}
       </div>
 
       {/* Vitality Gain Popup */}
@@ -133,7 +164,7 @@ const HagotchiCompanion = ({
             left: '50%',
             transform: 'translateX(-50%)',
             color: '#00ff41',
-            fontSize: isMobile ? '16px' : '14px',
+            fontSize: isMobile ? '18px' : '16px',
             fontWeight: 'bold',
             textShadow: '0 0 10px rgba(0, 255, 65, 0.8)',
             animation: 'floatUp 1.5s ease-out forwards',
@@ -193,7 +224,7 @@ const HagotchiCompanion = ({
         </span>
       </div>
 
-      {/* CSS Keyframes for animation */}
+      {/* CSS Keyframes for animations */}
       <style>
         {`
           @keyframes floatUp {
@@ -205,6 +236,10 @@ const HagotchiCompanion = ({
               opacity: 0;
               transform: translateX(-50%) translateY(-30px);
             }
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
           }
         `}
       </style>

@@ -95,7 +95,7 @@ const UnlockAnimation = ({
         textShadow: '0 0 10px rgba(0, 255, 65, 0.5)',
         animation: phase === 'revealed' ? 'pulse 1s ease-in-out infinite' : 'none',
       }}>
-        {phase === 'spinning' ? 'Unlocking...' : phase === 'revealing' ? 'New Form!' : 'Form Unlocked!'}
+        {phase === 'spinning' ? 'Unlocking...' : phase === 'revealing' ? 'New Companion!' : 'Companion Unlocked!'}
       </div>
 
       {/* Skin Display Container */}
@@ -132,27 +132,45 @@ const UnlockAnimation = ({
           [{currentDisplaySkin.rarity}]
         </div>
 
-        {/* ASCII Art */}
+        {/* Character Image */}
         <div style={{
-          fontFamily: 'IBM Plex Mono, Fira Code, SF Mono, monospace',
-          fontSize: isMobile ? '14px' : '12px',
-          lineHeight: 1.2,
-          color: phase === 'revealed' ? '#00ff41' : '#444',
-          textShadow: phase === 'revealed' ? '0 0 8px rgba(0, 255, 65, 0.5)' : 'none',
-          whiteSpace: 'pre',
-          transition: 'all 0.5s ease',
-          minHeight: '80px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100px',
         }}>
           {phase === 'spinning' ? (
-            // Show cycling skins during spin
-            currentDisplaySkin.art.content.map((line, i) => (
-              <div key={i} style={{ opacity: 0.5 }}>{line}</div>
-            ))
+            // Show cycling silhouettes during spin
+            <div style={{
+              width: isMobile ? '80px' : '64px',
+              height: isMobile ? '80px' : '64px',
+              backgroundColor: '#1a1a1a',
+              border: '1px solid #333',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#444',
+              fontSize: '24px',
+              animation: 'shake 0.1s linear infinite',
+            }}>
+              ?
+            </div>
           ) : (
             // Show the actual unlocked skin
-            currentDisplaySkin.art.thriving.map((line, i) => (
-              <div key={i}>{line}</div>
-            ))
+            <img
+              src={currentDisplaySkin.image}
+              alt={currentDisplaySkin.name}
+              style={{
+                width: isMobile ? '96px' : '80px',
+                height: isMobile ? '96px' : '80px',
+                imageRendering: 'pixelated',
+                filter: phase === 'revealed'
+                  ? 'drop-shadow(0 0 12px rgba(0, 255, 65, 0.6))'
+                  : 'none',
+                animation: phase === 'revealed' ? 'bounceIn 0.5s ease-out' : 'none',
+                transition: 'filter 0.5s ease',
+              }}
+            />
           )}
         </div>
       </div>
@@ -213,6 +231,16 @@ const UnlockAnimation = ({
           @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+          }
+          @keyframes bounceIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
           }
         `}
       </style>

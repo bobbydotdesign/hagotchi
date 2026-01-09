@@ -7,9 +7,18 @@
 html, body, #root {
   height: 100%;
   background-color: #0a0a0a;
-  overflow: hidden;
   margin: 0;
   padding: 0;
+}
+
+/* Desktop can scroll normally */
+body {
+  overflow: auto;
+}
+
+/* Mobile: hide overflow on body to prevent iOS bounce - controlled by JS adding class */
+body.mobile-view {
+  overflow: hidden;
 }
 
 /* Mobile app container */

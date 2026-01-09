@@ -10,14 +10,14 @@ CREATE TABLE IF NOT EXISTS hagotchi_spirit (
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
 
   -- Active skin/appearance
-  active_skin_id TEXT NOT NULL DEFAULT 'pixel_spirit',
+  active_skin_id TEXT NOT NULL DEFAULT 'egbert',
 
   -- Vitality system (0-100)
   vitality INTEGER NOT NULL DEFAULT 100 CHECK (vitality >= 0 AND vitality <= 100),
   last_fed_at TIMESTAMPTZ DEFAULT NOW(),
 
   -- Unlocked skins (array of skin IDs)
-  unlocked_skin_ids TEXT[] NOT NULL DEFAULT ARRAY['pixel_spirit'],
+  unlocked_skin_ids TEXT[] NOT NULL DEFAULT ARRAY['egbert'],
 
   -- Statistics for milestone tracking
   total_habits_completed INTEGER NOT NULL DEFAULT 0,

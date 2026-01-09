@@ -75,8 +75,8 @@ const SkinCollection = ({
         {/* Skin Grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '12px',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '10px',
         }}>
           {SKINS.map(skin => {
             const isUnlocked = unlockedSkinIds.includes(skin.id);
@@ -89,7 +89,7 @@ const SkinCollection = ({
                 key={skin.id}
                 onClick={() => handleSkinClick(skin)}
                 style={{
-                  padding: '12px',
+                  padding: '10px',
                   backgroundColor: isSelected
                     ? 'rgba(0, 255, 65, 0.1)'
                     : isUnlocked
@@ -100,6 +100,9 @@ const SkinCollection = ({
                   opacity: isUnlocked ? 1 : 0.5,
                   position: 'relative',
                   transition: 'all 0.2s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
                 }}
               >
                 {/* Active indicator */}
@@ -108,72 +111,81 @@ const SkinCollection = ({
                     position: 'absolute',
                     top: '4px',
                     right: '4px',
-                    fontSize: '8px',
+                    fontSize: '7px',
                     color: '#00ff41',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px',
                   }}>
-                    active
+                    ●
                   </div>
                 )}
 
-                {/* Skin Name */}
+                {/* Character Image */}
                 <div style={{
-                  fontSize: '11px',
-                  color: isUnlocked ? '#fff' : '#666',
-                  marginBottom: '4px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {isUnlocked ? skin.name : '???'}
-                </div>
-
-                {/* Rarity */}
-                <div style={{
-                  fontSize: '8px',
-                  color: isUnlocked ? getRarityColor(skin.rarity) : '#444',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  marginBottom: '8px',
-                }}>
-                  [{skin.rarity}]
-                </div>
-
-                {/* ASCII Preview */}
-                <div style={{
-                  fontFamily: 'IBM Plex Mono, Fira Code, SF Mono, monospace',
-                  fontSize: '8px',
-                  lineHeight: 1.1,
-                  color: isUnlocked ? '#00ff41' : '#333',
-                  whiteSpace: 'pre',
-                  textAlign: 'center',
-                  minHeight: '48px',
+                  width: '48px',
+                  height: '48px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  marginBottom: '8px',
                 }}>
                   {isUnlocked ? (
-                    <div>
-                      {skin.art.content.slice(0, 4).map((line, i) => (
-                        <div key={i}>{line}</div>
-                      ))}
-                    </div>
+                    <img
+                      src={skin.image}
+                      alt={skin.name}
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        imageRendering: 'pixelated',
+                      }}
+                    />
                   ) : (
-                    <div style={{ color: '#444' }}>
-                      [ ? ? ]<br />
-                      [ ? ? ]
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      backgroundColor: '#1a1a1a',
+                      border: '1px solid #333',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#444',
+                      fontSize: '20px',
+                    }}>
+                      ?
                     </div>
                   )}
                 </div>
 
-                {/* Unlock requirement */}
+                {/* Skin Name */}
+                <div style={{
+                  fontSize: '9px',
+                  color: isUnlocked ? '#fff' : '#666',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  textAlign: 'center',
+                  width: '100%',
+                }}>
+                  {isUnlocked ? skin.name : '???'}
+                </div>
+
+                {/* Rarity dot */}
+                <div style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: isUnlocked ? getRarityColor(skin.rarity) : '#333',
+                  marginTop: '4px',
+                }} />
+
+                {/* Unlock requirement tooltip on hover - shown below */}
                 {!isUnlocked && milestone && (
                   <div style={{
-                    fontSize: '8px',
+                    fontSize: '7px',
                     color: '#555',
-                    marginTop: '8px',
+                    marginTop: '6px',
                     textAlign: 'center',
+                    lineHeight: 1.3,
                   }}>
                     {milestone.description}
                   </div>
@@ -189,61 +201,77 @@ const SkinCollection = ({
             padding: '16px',
             backgroundColor: 'rgba(0, 255, 65, 0.02)',
             border: '1px solid #333',
+            display: 'flex',
+            gap: '16px',
+            alignItems: 'flex-start',
           }}>
-            {/* Skin Info */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '12px',
-            }}>
-              <span style={{
-                fontSize: '14px',
-                color: '#fff',
-              }}>
-                {selectedSkin.name}
-              </span>
-              <span style={{
-                fontSize: '9px',
-                color: getRarityColor(selectedSkin.rarity),
-                textTransform: 'uppercase',
-              }}>
-                [{selectedSkin.rarity}]
-              </span>
-            </div>
+            {/* Large character image */}
+            <img
+              src={selectedSkin.image}
+              alt={selectedSkin.name}
+              style={{
+                width: '64px',
+                height: '64px',
+                imageRendering: 'pixelated',
+                flexShrink: 0,
+              }}
+            />
 
-            {/* Lore Text */}
-            <p style={{
-              fontSize: '11px',
-              color: '#888',
-              lineHeight: 1.6,
-              margin: '0 0 16px 0',
-              fontStyle: 'italic',
-            }}>
-              "{selectedSkin.loreText}"
-            </p>
-
-            {/* Select Button */}
-            {activeSkinId !== selectedSkin.id && (
-              <button
-                onClick={handleSelectActive}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  backgroundColor: '#00ff41',
-                  border: 'none',
-                  color: '#000',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  fontSize: '11px',
-                  fontWeight: 'bold',
-                  letterSpacing: '1px',
+            <div style={{ flex: 1 }}>
+              {/* Skin Info */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '8px',
+              }}>
+                <span style={{
+                  fontSize: '14px',
+                  color: '#fff',
+                }}>
+                  {selectedSkin.name}
+                </span>
+                <span style={{
+                  fontSize: '9px',
+                  color: getRarityColor(selectedSkin.rarity),
                   textTransform: 'uppercase',
-                }}
-              >
-                Set as Active
-              </button>
-            )}
+                }}>
+                  [{selectedSkin.rarity}]
+                </span>
+              </div>
+
+              {/* Lore Text */}
+              <p style={{
+                fontSize: '10px',
+                color: '#888',
+                lineHeight: 1.5,
+                margin: '0 0 12px 0',
+                fontStyle: 'italic',
+              }}>
+                "{selectedSkin.loreText}"
+              </p>
+
+              {/* Select Button */}
+              {activeSkinId !== selectedSkin.id && (
+                <button
+                  onClick={handleSelectActive}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#00ff41',
+                    border: 'none',
+                    color: '#000',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    letterSpacing: '1px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Set as Active
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

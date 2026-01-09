@@ -149,6 +149,16 @@ const HabitTracker = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Toggle body class for mobile overflow handling
+  useEffect(() => {
+    if (isMobile) {
+      document.body.classList.add('mobile-view');
+    } else {
+      document.body.classList.remove('mobile-view');
+    }
+    return () => document.body.classList.remove('mobile-view');
+  }, [isMobile]);
+
   // Close menu when clicking outside
   useEffect(() => {
     if (!openMenuId) return;
@@ -2005,7 +2015,7 @@ const HabitTracker = () => {
                   e.target.style.color = '#666';
                 }}
               >
-                [skins {spirit.unlocked_skin_ids.length}/8]
+                [skins {spirit.unlocked_skin_ids.length}/15]
               </button>
               <button
                 onClick={() => setShowLoreArchive(true)}

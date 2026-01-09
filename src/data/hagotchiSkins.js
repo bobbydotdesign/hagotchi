@@ -1,344 +1,135 @@
 // Hagotchi Skin Definitions
-// Each skin represents a different form/appearance of the user's spirit companion
+// Each skin represents a different companion character
 
 export const SKINS = [
   {
-    id: 'pixel_spirit',
-    name: 'Pixel Spirit',
+    id: 'egbert',
+    name: 'Egbert',
     rarity: 'common',
-    loreText: 'The original form of the Hagotchi. A simple, flickering spirit born from the first spark of intention. It watches and waits, eager to grow alongside its companion.',
-    // ASCII art for different vitality states
-    art: {
-      thriving: [
-        '    ∧ ∧    ',
-        '  ( ◉ ◉ )  ',
-        '   (  ω  )   ',
-        '  /|    |\\  ',
-        ' / |    | \\ ',
-        '   └──┘   ',
-      ],
-      content: [
-        '    ∧ ∧    ',
-        '  ( ◕ ◕ )  ',
-        '   (  ‿  )   ',
-        '   |    |   ',
-        '   |    |   ',
-        '   └──┘   ',
-      ],
-      tired: [
-        '    ∧ ∧    ',
-        '  ( – – )  ',
-        '   (  ‿  )   ',
-        '   |    |   ',
-        '   |    |   ',
-        '   └──┘   ',
-      ],
-      dormant: [
-        '    ∧ ∧    ',
-        '  ( ᴗ ᴗ )  ',
-        '   ( ‿ )   ',
-        '  /|zZz|\\  ',
-        '   └──┘   ',
-        '           ',
-      ],
-    }
+    image: '/hagotchi/Egbert.svg',
+    loreText: 'A mysterious egg that appeared when you first started your habit journey. Despite being "just an egg," Egbert radiates warmth and encouragement. Some say great things hatch from humble beginnings.',
   },
   {
-    id: 'ember_wisp',
-    name: 'Ember Wisp',
+    id: 'pum',
+    name: 'Pum',
     rarity: 'common',
-    loreText: 'A spirit forged in the fires of dedication. The Ember Wisp glows brighter with each completed task, its warmth a testament to perseverance.',
-    art: {
-      thriving: [
-        '   \\*/*   ',
-        '  ╱(◆◆)╲  ',
-        ' ╱ *  * ╲ ',
-        ' \\  ∿∿  / ',
-        '  ╲____╱  ',
-        '    ∿∿    ',
-      ],
-      content: [
-        '   \\|/    ',
-        '  ╱(◇◇)╲  ',
-        ' ╱      ╲ ',
-        ' \\  ~~  / ',
-        '  ╲____╱  ',
-        '    ~     ',
-      ],
-      tired: [
-        '          ',
-        '  ╱(• •)╲  ',
-        ' ╱      ╲ ',
-        ' \\  ~~  / ',
-        '  ╲____╱  ',
-        '          ',
-      ],
-      dormant: [
-        '          ',
-        '  ╱(- -)╲  ',
-        ' ╱ zZz  ╲ ',
-        ' \\      / ',
-        '  ╲____╱  ',
-        '          ',
-      ],
-    }
+    image: '/hagotchi/Pum.svg',
+    loreText: 'A cheerful pumpkin spirit born from the seeds of consistency. Pum glows brighter with each completed habit, its eternal smile a reminder that growth takes time.',
   },
   {
-    id: 'crystal_guardian',
-    name: 'Crystal Guardian',
+    id: 'bell',
+    name: 'Bell',
+    rarity: 'common',
+    image: '/hagotchi/Bell.svg',
+    loreText: 'A tiny bell guardian that rings with joy at every achievement. Bell was forged from the echoes of completed tasks, forever chiming in celebration of progress.',
+  },
+  {
+    id: 'buns',
+    name: 'Buns',
     rarity: 'uncommon',
-    loreText: 'Crystallized from weeks of unwavering commitment. This form radiates with stored energy, each facet reflecting a completed goal.',
-    art: {
-      thriving: [
-        '   /\\◆/\\   ',
-        '  /◇◉◉◇\\  ',
-        ' /◆ ⟡ ◆\\ ',
-        ' \\◇ ◇◇ ◇/ ',
-        '  \\ ◆◆ /  ',
-        '   \\__/   ',
-      ],
-      content: [
-        '   /\\◇/\\   ',
-        '  /◇◕◕◇\\  ',
-        ' /◇    ◇\\ ',
-        ' \\◇ ‿‿ ◇/ ',
-        '  \\ ◇◇ /  ',
-        '   \\__/   ',
-      ],
-      tired: [
-        '   /\\◇/\\   ',
-        '  /◇• •◇\\  ',
-        ' /◇    ◇\\ ',
-        ' \\◇ __ ◇/ ',
-        '  \\ ◇◇ /  ',
-        '   \\__/   ',
-      ],
-      dormant: [
-        '   /\\ /\\   ',
-        '  /  - -  \\  ',
-        ' /  zZz  \\ ',
-        ' \\      / ',
-        '  \\    /  ',
-        '   \\__/   ',
-      ],
-    }
+    image: '/hagotchi/Buns.svg',
+    loreText: 'A swift rabbit companion who knows that habits, like hops, are best taken one at a time. Buns embodies the power of showing up day after day.',
   },
   {
-    id: 'void_walker',
-    name: 'Void Walker',
+    id: 'doog',
+    name: 'Doog',
     rarity: 'uncommon',
-    loreText: 'Emerged from the space between habits, the Void Walker exists partially in shadow. It knows the weight of missed days and the triumph of return.',
-    art: {
-      thriving: [
-        '  ▓▒░ ░▒▓  ',
-        ' ▓(⬤ ⬤)▓ ',
-        ' ░ (⌣⌣) ░ ',
-        ' ▒ |  | ▒ ',
-        ' ▓ |  | ▓ ',
-        '  ░▒▓▓▒░  ',
-      ],
-      content: [
-        '  ▒░   ░▒  ',
-        ' ▒(● ●)▒ ',
-        ' ░ (‿‿) ░ ',
-        ' ▒ |  | ▒ ',
-        ' ░ |  | ░ ',
-        '  ░▒▒░   ',
-      ],
-      tired: [
-        '  ░     ░  ',
-        ' ░(• •)░ ',
-        ' ░ (__) ░ ',
-        '   |  |   ',
-        '   |  |   ',
-        '    ░░    ',
-      ],
-      dormant: [
-        '          ',
-        '  (- -)   ',
-        '  (zZz)   ',
-        '   |  |   ',
-        '   └──┘   ',
-        '          ',
-      ],
-    }
+    image: '/hagotchi/Doog.svg',
+    loreText: 'Loyal beyond measure, Doog has been waiting for someone consistent enough to befriend. This faithful companion celebrates your streaks with tail wags and unwavering support.',
   },
   {
-    id: 'neon_phoenix',
-    name: 'Neon Phoenix',
-    rarity: 'rare',
-    loreText: 'Born from the ashes of broken streaks, the Neon Phoenix rises eternal. Its digital flames burn brightest after each rebirth, proof that every fall can lead to flight.',
-    art: {
-      thriving: [
-        '  \\\\╲|╱//  ',
-        '  =◉◆◆◉=  ',
-        ' ╱╱(ωω)╲╲ ',
-        '╱╱╱ ▼▼ ╲╲╲',
-        '  ╲╲╱╱   ',
-        ' ~≈~≈~≈~ ',
-      ],
-      content: [
-        '   ╲|╱    ',
-        '  =(◆◆)=  ',
-        '  ╱(‿‿)╲  ',
-        ' ╱  ▽▽  ╲ ',
-        '   ╲╱╱   ',
-        '  ~≈~≈~  ',
-      ],
-      tired: [
-        '          ',
-        '   (◇◇)   ',
-        '   (__)   ',
-        '   ╲  ╱   ',
-        '    ╲╱    ',
-        '   ~≈~    ',
-      ],
-      dormant: [
-        '          ',
-        '   (- -)   ',
-        '   (zZz)   ',
-        '   ╲__╱   ',
-        '          ',
-        '    ~     ',
-      ],
-    }
+    id: 'dock',
+    name: 'Dock',
+    rarity: 'uncommon',
+    image: '/hagotchi/Dock.svg',
+    loreText: 'A determined duck who waddles alongside you through every habit. Dock reminds you that even when progress feels slow, you\'re still moving forward.',
   },
   {
-    id: 'quantum_byte',
-    name: 'Quantum Byte',
-    rarity: 'rare',
-    loreText: 'Existing in multiple states simultaneously, the Quantum Byte processes reality at impossible speeds. Legends say it can see habits completed in parallel timelines.',
-    art: {
-      thriving: [
-        ' 01|10|01 ',
-        ' [◉▓▓◉] ',
-        ' |=◈◈=| ',
-        ' |01◆10| ',
-        ' [▓▓▓▓] ',
-        ' 10|01|10 ',
-      ],
-      content: [
-        ' 01|  |01 ',
-        ' [◕  ◕] ',
-        ' |=  =| ',
-        ' |01 10| ',
-        ' [▒▒▒▒] ',
-        ' 10|__|10 ',
-      ],
-      tired: [
-        '  0|  |0  ',
-        '  [• •]  ',
-        '  |=  =|  ',
-        '  | __ |  ',
-        '  [░░░░]  ',
-        '   |__|   ',
-      ],
-      dormant: [
-        '  0    0  ',
-        '  [- -]  ',
-        '  |zZz|  ',
-        '  |    |  ',
-        '  [____]  ',
-        '          ',
-      ],
-    }
+    id: 'gose',
+    name: 'Gose',
+    rarity: 'uncommon',
+    image: '/hagotchi/Gose.svg',
+    loreText: 'A mischievous goose with a mysterious past. Legend says Gose once caused chaos but has reformed, now channeling that chaotic energy into helping you stay on track.',
   },
   {
-    id: 'elder_glitch',
-    name: 'Elder Glitch',
+    id: 'axol',
+    name: 'Axol',
     rarity: 'rare',
-    loreText: 'An ancient spirit corrupted by time itself, the Elder Glitch phases between realities. Its fragmented form holds secrets of habits long forgotten.',
-    art: {
-      thriving: [
-        ' ▌█▐▀▌█▐ ',
-        ' ▌(⬤⬤)▐ ',
-        ' █▌≋≋▐█ ',
-        ' ▐▌||▐▌ ',
-        ' █▌▄▄▐█ ',
-        ' ▀▄▀▄▀▄ ',
-      ],
-      content: [
-        '  █▐▀▌█  ',
-        '  (● ●)  ',
-        '  ▌≋≋▐  ',
-        '  ▌||▐  ',
-        '  █▄▄█  ',
-        '  ▀▄▀▄  ',
-      ],
-      tired: [
-        '   ▐▀▌   ',
-        '  (• •)  ',
-        '   ▌▐   ',
-        '   ||   ',
-        '   ▄▄   ',
-        '   ▀▀   ',
-      ],
-      dormant: [
-        '         ',
-        '  (- -)  ',
-        '  zZz   ',
-        '   ||   ',
-        '   __   ',
-        '         ',
-      ],
-    }
+    image: '/hagotchi/Axol.svg',
+    loreText: 'An ancient axolotl spirit that regenerates motivation like it regenerates limbs. Axol has witnessed countless habit journeys and chooses only the most dedicated companions.',
   },
   {
-    id: 'cosmic_sage',
-    name: 'Cosmic Sage',
+    id: 'snee',
+    name: 'Snee',
     rarity: 'rare',
-    loreText: 'The final evolution. The Cosmic Sage has witnessed countless habits born and completed. In its starlit eyes burns the wisdom of eternal consistency.',
-    art: {
-      thriving: [
-        ' ✦ ✧ ★ ✧ ✦ ',
-        ' ☆(✴✴)☆ ',
-        ' ★ (∞∞) ★ ',
-        ' ✧╱╲╱╲✧ ',
-        ' ✦╲☆☆╱✦ ',
-        ' ★✧✦✧★ ',
-      ],
-      content: [
-        ' ✦  ★  ✦ ',
-        '  (✴ ✴)  ',
-        '   (‿‿)   ',
-        '  ╱╲╱╲  ',
-        '  ╲☆☆╱  ',
-        '  ✧ ✦ ✧  ',
-      ],
-      tired: [
-        '    ★    ',
-        '  (• •)  ',
-        '   (__)   ',
-        '  ╱╲╱╲  ',
-        '  ╲__╱  ',
-        '    ✧    ',
-      ],
-      dormant: [
-        '         ',
-        '  (- -)  ',
-        '  (zZz)   ',
-        '  ╱__╲  ',
-        '         ',
-        '    ·    ',
-      ],
-    }
+    image: '/hagotchi/Snee.svg',
+    loreText: 'A sleek serpent of discipline that slithers through procrastination. Snee\'s unblinking gaze keeps you focused, shedding old excuses like dead skin.',
+  },
+  {
+    id: 'turmy',
+    name: 'Turmy',
+    rarity: 'rare',
+    image: '/hagotchi/Turmy.svg',
+    loreText: 'Slow and steady wins the race. Turmy has traversed the longest habit journeys, its shell inscribed with the wisdom of patience and persistence.',
+  },
+  {
+    id: 'boom',
+    name: 'Boom',
+    rarity: 'rare',
+    image: '/hagotchi/Boom.svg',
+    loreText: 'An explosive spirit born from breakthrough moments. Boom appears when habits finally click, celebrating those moments when everything comes together.',
+  },
+  {
+    id: 'brr',
+    name: 'Brr',
+    rarity: 'epic',
+    image: '/hagotchi/Brr.svg',
+    loreText: 'A frost spirit that thrives in the cold discipline of routine. Brr teaches that comfort zones must be left behind for true growth to occur.',
+  },
+  {
+    id: 'rac',
+    name: 'Rac',
+    rarity: 'epic',
+    image: '/hagotchi/Rac.svg',
+    loreText: 'A cunning raccoon who collects completed habits like treasures. Rac has a knack for finding motivation in unexpected places and never gives up on a goal.',
+  },
+  {
+    id: 'ooo',
+    name: 'OOO',
+    rarity: 'epic',
+    image: '/hagotchi/OOO.svg',
+    loreText: 'A mysterious blob of pure habit energy that defies classification. OOO exists in a state of perpetual flow, embodying the effortless consistency masters achieve.',
+  },
+  {
+    id: 'rad',
+    name: 'Rad',
+    rarity: 'legendary',
+    image: '/hagotchi/Rad.svg',
+    loreText: 'The ultimate companion, Rad radiates pure achievement energy. Only those who have proven their dedication through hundreds of completed habits can attract this legendary spirit.',
   },
 ];
 
-// Unlock milestones
+// Unlock milestones - balanced progression
 export const UNLOCK_MILESTONES = [
-  { skinId: 'pixel_spirit', type: 'default', condition: null, description: 'Your starting companion' },
-  { skinId: 'ember_wisp', type: 'streak', condition: 7, description: 'Achieve a 7-day streak' },
-  { skinId: 'crystal_guardian', type: 'habits', condition: 50, description: 'Complete 50 total habits' },
-  { skinId: 'void_walker', type: 'streak', condition: 14, description: 'Achieve a 14-day streak' },
-  { skinId: 'neon_phoenix', type: 'habits', condition: 100, description: 'Complete 100 total habits' },
-  { skinId: 'quantum_byte', type: 'streak', condition: 30, description: 'Achieve a 30-day streak' },
-  { skinId: 'elder_glitch', type: 'habits', condition: 200, description: 'Complete 200 total habits' },
-  { skinId: 'cosmic_sage', type: 'streak', condition: 60, description: 'Achieve a 60-day streak' },
+  { skinId: 'egbert', type: 'default', condition: null, description: 'Your starting companion' },
+  { skinId: 'pum', type: 'streak', condition: 3, description: 'Achieve a 3-day streak' },
+  { skinId: 'bell', type: 'habits', condition: 10, description: 'Complete 10 total habits' },
+  { skinId: 'buns', type: 'streak', condition: 7, description: 'Achieve a 7-day streak' },
+  { skinId: 'doog', type: 'habits', condition: 25, description: 'Complete 25 total habits' },
+  { skinId: 'dock', type: 'streak', condition: 14, description: 'Achieve a 14-day streak' },
+  { skinId: 'gose', type: 'habits', condition: 50, description: 'Complete 50 total habits' },
+  { skinId: 'axol', type: 'streak', condition: 21, description: 'Achieve a 21-day streak' },
+  { skinId: 'snee', type: 'habits', condition: 75, description: 'Complete 75 total habits' },
+  { skinId: 'turmy', type: 'streak', condition: 30, description: 'Achieve a 30-day streak' },
+  { skinId: 'boom', type: 'habits', condition: 100, description: 'Complete 100 total habits' },
+  { skinId: 'brr', type: 'streak', condition: 45, description: 'Achieve a 45-day streak' },
+  { skinId: 'rac', type: 'habits', condition: 150, description: 'Complete 150 total habits' },
+  { skinId: 'ooo', type: 'streak', condition: 60, description: 'Achieve a 60-day streak' },
+  { skinId: 'rad', type: 'habits', condition: 200, description: 'Complete 200 total habits' },
 ];
 
-// Get skin by ID
-export const getSkinById = (id) => SKINS.find(s => s.id === id);
+// Get skin by ID (with fallback to default)
+export const getSkinById = (id) => SKINS.find(s => s.id === id) || SKINS[0];
 
 // Get vitality state based on vitality level
 export const getVitalityState = (vitality) => {
@@ -404,7 +195,9 @@ export const getRarityColor = (rarity) => {
   switch (rarity) {
     case 'common': return '#888';
     case 'uncommon': return '#00ff41';
-    case 'rare': return '#ff00ff';
+    case 'rare': return '#00bfff';
+    case 'epic': return '#ff00ff';
+    case 'legendary': return '#ffaa00';
     default: return '#888';
   }
 };

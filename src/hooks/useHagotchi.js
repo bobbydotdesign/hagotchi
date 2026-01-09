@@ -7,7 +7,7 @@ import {
   getSkinById
 } from '../data/hagotchiSkins';
 
-const HAGOTCHI_CACHE_KEY = 'habito_hagotchi_cache_v1';
+const HAGOTCHI_CACHE_KEY = 'hagotchi_cache_v2';
 
 export const useHagotchi = (userId) => {
   // Load cached spirit immediately for faster perceived load
@@ -66,10 +66,10 @@ export const useHagotchi = (userId) => {
         // No spirit exists, create one
         const newSpirit = {
           user_id: userId,
-          active_skin_id: 'pixel_spirit',
+          active_skin_id: 'egbert',
           vitality: 100,
           last_fed_at: new Date().toISOString(),
-          unlocked_skin_ids: ['pixel_spirit'],
+          unlocked_skin_ids: ['egbert'],
           total_habits_completed: 0,
           current_streak: 0,
           longest_streak: 0
@@ -91,7 +91,63 @@ export const useHagotchi = (userId) => {
       } else if (data) {
         // Apply vitality decay
         const currentVitality = calculateVitalityDecay(data.last_fed_at, data.vitality);
-        setSpirit({ ...data, vitality: currentVitality });
+
+        // Migrate old skin IDs to new ones
+        const oldToNew = {
+          'pixel_spirit': 'egbert',
+          'ember_wisp': 'pum',
+          'crystal_guardian': 'gose',
+          'void_walker': 'dock',
+          'neon_phoenix': 'boom',
+          'quantum_byte': 'snee',
+          'elder_glitch': 'brr',
+          'cosmic_sage': 'rad'
+        };
+
+        let needsMigration = false;
+        let migratedSkinId = data.active_skin_id;
+        let migratedUnlocked = [...data.unlocked_skin_ids];
+
+        // Migrate active skin
+        if (oldToNew[data.active_skin_id]) {
+          migratedSkinId = oldToNew[data.active_skin_id];
+          needsMigration = true;
+        }
+
+        // Migrate unlocked skins
+        migratedUnlocked = migratedUnlocked.map(id => oldToNew[id] || id);
+        if (JSON.stringify(migratedUnlocked) !== JSON.stringify(data.unlocked_skin_ids)) {
+          needsMigration = true;
+        }
+
+        // Ensure egbert is always unlocked
+        if (!migratedUnlocked.includes('egbert')) {
+          migratedUnlocked = ['egbert', ...migratedUnlocked];
+          needsMigration = true;
+        }
+
+        const updatedData = {
+          ...data,
+          vitality: currentVitality,
+          active_skin_id: migratedSkinId,
+          unlocked_skin_ids: migratedUnlocked
+        };
+
+        setSpirit(updatedData);
+
+        // Persist migration to database
+        if (needsMigration) {
+          supabase
+            .from('hagotchi_spirit')
+            .update({
+              active_skin_id: migratedSkinId,
+              unlocked_skin_ids: migratedUnlocked
+            })
+            .eq('user_id', userId)
+            .then(({ error: updateError }) => {
+              if (updateError) console.error('Migration update error:', updateError);
+            });
+        }
       }
     } catch (err) {
       console.error('Error in fetchSpirit:', err);

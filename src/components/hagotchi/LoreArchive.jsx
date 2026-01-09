@@ -31,7 +31,7 @@ const LoreArchive = ({
           textAlign: 'center',
           fontStyle: 'italic',
         }}>
-          The stories of your companion's forms, collected through your journey of growth.
+          The stories of your companions, collected through your journey of growth.
         </p>
 
         {/* Lore entries */}
@@ -42,7 +42,7 @@ const LoreArchive = ({
             color: '#666',
             fontSize: '12px',
           }}>
-            No lore entries yet. Complete habits to unlock new forms!
+            No lore entries yet. Complete habits to unlock new companions!
           </div>
         ) : (
           unlockedSkins.map((skin, index) => (
@@ -70,22 +70,19 @@ const LoreArchive = ({
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: '12px',
                 marginBottom: '12px',
               }}>
-                {/* Mini ASCII preview */}
-                <div style={{
-                  fontFamily: 'IBM Plex Mono, Fira Code, SF Mono, monospace',
-                  fontSize: '6px',
-                  lineHeight: 1,
-                  color: '#00ff41',
-                  whiteSpace: 'pre',
-                  opacity: 0.7,
-                }}>
-                  {skin.art.content.slice(1, 3).map((line, i) => (
-                    <div key={i}>{line}</div>
-                  ))}
-                </div>
+                {/* Character image */}
+                <img
+                  src={skin.image}
+                  alt={skin.name}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    imageRendering: 'pixelated',
+                  }}
+                />
 
                 <div>
                   <div style={{
