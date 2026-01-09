@@ -2076,14 +2076,19 @@ const HabitTracker = () => {
                 alignItems: 'center',
                 position: 'relative',
                 cursor: 'pointer',
+                // Fixed min-height prevents layout shift when speech bubble is dismissed
+                minHeight: '280px',
               }}
             >
-              {/* Speech bubble above character */}
+              {/* Speech bubble above character - absolutely positioned to not affect layout */}
               {encouragementMessage && (
                 <div style={{
-                  position: 'relative',
-                  marginBottom: '8px',
+                  position: 'absolute',
+                  top: '0',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
                   maxWidth: '260px',
+                  zIndex: 10,
                 }}>
                   <div style={{
                     padding: '8px 28px 8px 12px',
@@ -2139,10 +2144,10 @@ const HabitTracker = () => {
                 </div>
               )}
 
-              {/* Glow ring */}
+              {/* Glow ring - fixed position, doesn't change with bubble */}
               <div style={{
                 position: 'absolute',
-                top: encouragementMessage ? '70px' : '0',
+                top: '70px',
                 width: '140px',
                 height: '140px',
                 borderRadius: '50%',
@@ -2152,7 +2157,7 @@ const HabitTracker = () => {
                 animation: getTotalHearts(completionPercent) >= 2.5 ? 'headerGlow 2s ease-in-out infinite' : 'none',
               }} />
 
-              {/* Character */}
+              {/* Character - positioned below speech bubble area */}
               <img
                 src={currentSkin.image}
                 alt={currentSkin.name}
@@ -2162,6 +2167,7 @@ const HabitTracker = () => {
                   imageRendering: 'pixelated',
                   position: 'relative',
                   zIndex: 1,
+                  marginTop: '70px',
                   filter: getTotalHearts(completionPercent) >= 2.5
                     ? 'drop-shadow(0 0 16px rgba(0,255,65,0.6))'
                     : 'drop-shadow(0 0 8px rgba(0,255,65,0.3))',
