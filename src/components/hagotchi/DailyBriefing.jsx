@@ -299,16 +299,17 @@ const DailyBriefing = ({
 
       {/* TOP SECTION - Date & Weather (fixed to top) */}
       <div style={{
-        position: 'absolute',
+        position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        paddingTop: `calc(60px + env(safe-area-inset-top, 0px))`,
+        paddingTop: '70px',
         paddingBottom: '16px',
-        zIndex: 10,
+        zIndex: 9999,
+        pointerEvents: 'none',
       }}>
         {/* Date */}
         <div style={{
@@ -460,7 +461,7 @@ const DailyBriefing = ({
       {/* BOTTOM SECTION - Fact & Button (fixed to bottom) */}
       {!showLocationPrompt && (
         <div style={{
-          position: 'absolute',
+          position: 'fixed',
           bottom: 0,
           left: 0,
           right: 0,
@@ -468,8 +469,8 @@ const DailyBriefing = ({
           flexDirection: 'column',
           alignItems: 'center',
           paddingTop: '16px',
-          paddingBottom: `calc(40px + env(safe-area-inset-bottom, 0px))`,
-          zIndex: 10,
+          paddingBottom: '50px',
+          zIndex: 9999,
         }}>
           {/* Fun Fact Section */}
           {todayFact && (
