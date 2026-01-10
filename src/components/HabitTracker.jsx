@@ -32,7 +32,9 @@ import {
   SkinCollection,
   UnlockAnimation,
   LoreArchive,
-  Onboarding
+  Onboarding,
+  DailyBriefing,
+  shouldShowDailyBriefing
 } from './hagotchi';
 
 // Design tokens - edit these to change the app's color scheme
@@ -149,6 +151,7 @@ const HabitTracker = () => {
   const [showLoreArchive, setShowLoreArchive] = useState(false);
   const [showHagotchiMenu, setShowHagotchiMenu] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const [showDailyBriefing, setShowDailyBriefing] = useState(false);
   const contentRef = useRef(null);
 
   // Handle responsive layout
@@ -545,6 +548,10 @@ const HabitTracker = () => {
         setBootSequence(false);
         // Hide native splash screen after boot animation
         hideSplashScreen();
+        // Check for daily briefing after boot
+        if (shouldShowDailyBriefing()) {
+          setShowDailyBriefing(true);
+        }
       }, 800);
     }
   }, [bootLine, bootSequence, bootFading, bootStarted]);
@@ -1661,6 +1668,17 @@ const HabitTracker = () => {
           </div>
         )}
       </div>
+    );
+  }
+
+  // Daily Briefing (shown once per day after boot, if user is logged in and has a Hagotchi)
+  if (showDailyBriefing && user && currentSkin) {
+    return (
+      <DailyBriefing
+        skin={currentSkin}
+        onDismiss={() => setShowDailyBriefing(false)}
+        isMobile={isMobile}
+      />
     );
   }
 

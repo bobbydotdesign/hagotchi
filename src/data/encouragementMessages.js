@@ -1,6 +1,49 @@
 // Encouragement Messages for Hagotchi Companions
 // Each trigger has messages for all 4 personality types
 
+// ============================================
+// DAILY BRIEFING MESSAGES
+// ============================================
+
+export const DAILY_BRIEFING_MESSAGES = {
+  nurturing: [
+    "A new day awaits you, friend. Every small step matters.",
+    "Welcome to today. I believe in you, even on the hard days.",
+    "Good to see you. Be kind to yourself today.",
+    "Ready when you are. You don't have to be perfect, just present.",
+    "Let's make this day count together. One habit at a time.",
+    "A fresh start awaits. Your effort today builds tomorrow.",
+    "I'm glad you're here. Progress isn't always visible, but it's real.",
+  ],
+  energetic: [
+    "LET'S GOOO! New day, new victories! You're UNSTOPPABLE!",
+    "TODAY IS YOUR DAY! Champions make progress, not excuses!",
+    "Fresh start! Your only competition is yesterday's you!",
+    "Rise and shine! Every habit is a small victory. Stack 'em up!",
+    "The grind never stops! Consistency is your superpower!",
+    "Maximum energy activated! Today you become even more awesome!",
+    "Ready to crush it?! Doubters gonna doubt, winners gonna WIN!",
+  ],
+  calm: [
+    "Another sunrise. Another opportunity. Trust the process.",
+    "The day unfolds at its own pace. Be like water.",
+    "Breathe in possibility. Growth happens in quiet moments.",
+    "Today is a clean slate. Mastery is practice in disguise.",
+    "A moment of stillness before the journey. Begin.",
+    "Small actions, repeated, become great things.",
+    "The journey continues. Trust the rhythm of daily practice.",
+  ],
+  playful: [
+    "Guess what?! It's a brand new day! You're gonna crush it!",
+    "Plot twist: Today's gonna be awesome! Spoiler: It's because of you!",
+    "Ready for adventure? Pro tip: Doing the thing > thinking about it!",
+    "New day who dis? Just kidding! Today's mission: Be awesome!",
+    "Wake up! Fun fact: You're cooler than you think!",
+    "Achievement unlocked: Showing up! The secret ingredient is YOU!",
+    "Plot armor activated! You literally can't lose today!",
+  ],
+};
+
 export const ENCOURAGEMENT_MESSAGES = {
   // ============================================
   // APP OPEN GREETINGS
@@ -670,4 +713,12 @@ export const getHeartTrigger = (newHearts, previousHearts) => {
   }
 
   return null;
+};
+
+// Get daily briefing message
+export const getDailyBriefingMessage = (personality) => {
+  const messages = DAILY_BRIEFING_MESSAGES[personality];
+  if (!messages?.length) return null;
+
+  return messages[Math.floor(Math.random() * messages.length)];
 };
