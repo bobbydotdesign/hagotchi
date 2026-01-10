@@ -312,6 +312,7 @@ const DailyBriefing = ({
         paddingTop: `calc(40px + env(safe-area-inset-top, 0px))`,
         background: 'linear-gradient(to bottom, #0a0a0a 0%, #0a0a0a 80%, transparent 100%)',
         paddingBottom: '24px',
+        zIndex: 5,
       }}>
         {/* Date */}
         <div style={{
@@ -406,14 +407,28 @@ const DailyBriefing = ({
           marginBottom: '12px',
         }}
       >
+        {/* Glow effect behind the character */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: isMobile ? '100px' : '80px',
+            height: isMobile ? '100px' : '80px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(0, 255, 65, 0.4) 0%, transparent 70%)',
+            pointerEvents: 'none',
+          }}
+        />
         <img
           src={skin.image}
           alt={skin.name}
           style={{
+            position: 'relative',
             width: isMobile ? '120px' : '100px',
             height: isMobile ? '120px' : '100px',
             imageRendering: 'pixelated',
-            filter: 'drop-shadow(0 0 20px rgba(0, 255, 65, 0.5))',
           }}
         />
       </div>
@@ -455,6 +470,7 @@ const DailyBriefing = ({
           paddingBottom: `calc(24px + env(safe-area-inset-bottom, 0px))`,
           background: 'linear-gradient(to top, #0a0a0a 0%, #0a0a0a 80%, transparent 100%)',
           paddingTop: '24px',
+          zIndex: 5,
         }}>
           {/* Fun Fact Section */}
           {todayFact && (
