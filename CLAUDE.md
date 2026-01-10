@@ -129,35 +129,59 @@ Virtual pet companion that responds to habit completions. Lives in the Today vie
 ### Data Storage
 - **hagotchi_spirit table**: Stores user's companion state
   - `active_skin_id`: Current character (e.g., 'egbert')
-  - `vitality`: 0-100, decays 2 points/hour, gains 15-25 per habit completion
+  - `hearts_base`: Accumulated hearts from previous days (0-3)
+  - `coins`: Currency earned from completing hearts
   - `unlocked_skin_ids`: Array of unlocked character IDs
-  - `total_habits_completed`: Lifetime count for unlock milestones
-  - `longest_streak`: For streak-based unlocks
+  - `total_habits_completed`: Lifetime count
+  - `longest_streak`: For tracking
+- **hagotchi_stats table**: Per-Hagotchi stats (days active, habits completed while active)
 - **localStorage cache**: `hagotchi_cache_v2` for faster loads
 
 ### Characters (15 total)
-| Rarity | Characters | Unlock |
-|--------|------------|--------|
-| Common | Egbert (default), Pum, Bell | Start, 3-day streak, 10 habits |
-| Uncommon | Buns, Doog, Dock, Gose | 7-day streak, 25 habits, 14-day streak, 50 habits |
-| Rare | Axol, Snee, Turmy, Boom | 21-day streak, 75 habits, 30-day streak, 100 habits |
-| Epic | Brr, Rac, OOO | 45-day streak, 150 habits, 60-day streak |
-| Legendary | Rad | 200 habits |
+Unlocked via blind box when reaching 3 hearts. Each character has a personality type that affects their messages.
+
+| Rarity | Characters | Personality |
+|--------|------------|-------------|
+| Common | Egbert (default), Pum, Bell | nurturing, energetic, energetic |
+| Uncommon | Buns, Doog, Dock, Gose | playful, nurturing, calm, playful |
+| Rare | Axol, Snee, Turmy, Boom | calm, playful, nurturing, energetic |
+| Epic | Brr, Rac, OOO | nurturing, playful, calm |
+| Legendary | Rad | energetic |
 
 ### File Structure
-- `src/components/hagotchi/HagotchiCompanion.jsx` - Main display component
+- `src/components/hagotchi/HagotchiCompanion.jsx` - Main display component (not currently used, UI is in HabitTracker.jsx)
 - `src/components/hagotchi/SkinCollection.jsx` - Character selection modal
 - `src/components/hagotchi/LoreArchive.jsx` - Character backstories modal
 - `src/components/hagotchi/UnlockAnimation.jsx` - New character unlock animation
-- `src/data/hagotchiSkins.js` - Character definitions, rarities, unlock conditions
-- `src/hooks/useHagotchi.js` - State management, Supabase sync
+- `src/components/hagotchi/Onboarding.jsx` - New user onboarding flow
+- `src/data/hagotchiSkins.js` - Character definitions, rarities, personalities
+- `src/data/encouragementMessages.js` - Personality-based messages for all triggers
+- `src/hooks/useHagotchi.js` - State management, hearts system, Supabase sync
 - `public/hagotchi/*.svg` - Character sprite SVGs (pixel art in terminal green)
 
-### Vitality States
-- **Thriving** (80-100): Full opacity, green glow, bouncing animation
-- **Content** (40-79): Slight opacity reduction, bouncing
-- **Tired** (20-39): Reduced opacity, orange color, no bounce
-- **Dormant** (0-19): Very faded, grayscale, "zzz" indicator
+### Hearts System (Replaces Vitality)
+- 3 hearts to unlock a random Hagotchi via blind box
+- First heart = today's completion progress (fills as habits are completed)
+- Hearts never decay - positive reinforcement only
+- At 3 hearts: blind box unlocks random new character, hearts reset to 0
+- Coins awarded when crossing full heart thresholds
+
+### CRT Device UI
+The Hagotchi is displayed inside a retro CRT device frame:
+- **Device shell**: Rounded dark gray frame with inset shadows
+- **HAGOTCHI label**: Green text above the screen
+- **Screen**: 300x240px with CRT scanlines overlay and green glow
+- **Character**: 112px with idle bounce animation (`@keyframes hagotchiBounce`)
+- **Buttons**: Three circular buttons below screen - JOKE, PEP, LORE
+- **Cartridge**: Bottom protrusion showing "X/15 Collected" - opens collection modal
+
+### Interaction System
+Tapping buttons triggers personality-based messages:
+- **JOKE**: `triggerInteraction('tell_joke')` - humor messages
+- **PEP**: `triggerInteraction('tell_encouragement')` - motivational messages
+- **LORE**: Opens the LoreArchive modal for character backstories
+- Messages defined in `src/data/encouragementMessages.js` under `INTERACTION_MESSAGES`
+- Each personality type (nurturing, energetic, calm, playful) has unique messages
 
 ### Important Gotchas
 1. **Skin ID Migration**: Old ASCII art skin IDs (pixel_spirit, ember_wisp, etc.) auto-migrate to new IDs (egbert, pum, etc.) on fetch
@@ -168,8 +192,18 @@ Virtual pet companion that responds to habit completions. Lives in the Today vie
 
 ### Expandable Header (Mobile)
 The Hagotchi header has two states:
-- **Expanded**: Large hero with character, hearts, encouragement bubble - shown at top of page
+- **Expanded**: CRT device with character, hearts in top bar, encouragement bubble - shown at top of page
 - **Collapsed**: Compact header with small character + hearts - slides in when scrolled
+
+**Expanded header layout (top bar):**
+- Left: Coins display
+- Center: 3 hearts (clickable, opens interaction menu)
+- Right: Menu button (settings, collection, lore)
+
+**Compact header layout:**
+- Left: Coins display
+- Center: Small character image + 3 hearts (clickable, opens interaction menu)
+- Right: Menu button
 
 **Scroll behavior:**
 - Expanded hero is in the scrollable content area (not fixed)
@@ -177,15 +211,13 @@ The Hagotchi header has two states:
 - After scrolling 280px, compact header slides in (`translateY(0)`)
 - Scrolling back to <50px hides compact header again
 
-**Critical: Scroll Spacer**
-A spacer at the bottom of content ensures enough scroll room to trigger the compact header:
+**Scroll Spacer:**
+A small spacer at the bottom of content:
 ```jsx
-<div style={{ height: 'max(300px, 50vh)' }} />
+<div style={{ height: '100px' }} />
 ```
-- **Must use viewport-relative units** (vh), not fixed px
-- Fixed px spacers break on different screen sizes - content fits without scrolling 280px
-- `max(300px, 50vh)` guarantees enough scroll room on any screen
-- This has been a recurring bug - DO NOT change to fixed px values
+- The CRT device is large enough that only 100px extra space is needed
+- This allows scrolling past the hero to trigger the compact header
 
 ### Supabase Migration
 The `hagotchi_spirit` table must exist. Migration at `supabase/migrations/003_create_hagotchi_spirit_table.sql`.
