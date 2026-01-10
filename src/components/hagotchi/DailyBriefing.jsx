@@ -314,7 +314,6 @@ const DailyBriefing = ({
           paddingTop: '70px',
           paddingBottom: '16px',
           textAlign: 'center',
-          background: 'rgba(255,0,0,0.3)',
         }}>
           <div style={{
             fontSize: isMobile ? '16px' : '14px',
