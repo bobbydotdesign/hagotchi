@@ -300,55 +300,67 @@ const DailyBriefing = ({
         </div>
       )}
 
-      {/* Date */}
+      {/* Top Section - Fixed to top */}
       <div style={{
-        fontSize: isMobile ? '16px' : '14px',
-        letterSpacing: '1px',
-        color: '#fff',
-        marginBottom: '8px',
-        textAlign: 'center',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        paddingTop: `calc(40px + env(safe-area-inset-top, 0px))`,
+        background: 'linear-gradient(to bottom, #0a0a0a 0%, #0a0a0a 80%, transparent 100%)',
+        paddingBottom: '24px',
       }}>
-        {formatDate()}
-      </div>
-
-      {/* Holiday badge (if it's a holiday) */}
-      {todayFact?.type === 'holiday' && (
+        {/* Date */}
         <div style={{
-          fontSize: '11px',
+          fontSize: isMobile ? '16px' : '14px',
           letterSpacing: '1px',
-          color: '#ffaa00',
-          marginBottom: '16px',
-          padding: '4px 12px',
-          border: '1px solid #ffaa00',
-          textTransform: 'uppercase',
+          color: '#fff',
+          marginBottom: '8px',
+          textAlign: 'center',
         }}>
-          {todayFact.name}
+          {formatDate()}
         </div>
-      )}
 
-      {/* Weather */}
-      {weather && !showLocationPrompt && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          marginBottom: '20px',
-          fontSize: '13px',
-          color: '#888',
-        }}>
-          <span style={{ fontSize: '20px' }}>{weather.icon}</span>
-          <span>{weather.temp}°F</span>
-          <span style={{ color: '#666' }}>·</span>
-          <span>{weather.condition}</span>
-        </div>
-      )}
+        {/* Holiday badge (if it's a holiday) */}
+        {todayFact?.type === 'holiday' && (
+          <div style={{
+            fontSize: '11px',
+            letterSpacing: '1px',
+            color: '#ffaa00',
+            marginBottom: '8px',
+            padding: '4px 12px',
+            border: '1px solid #ffaa00',
+            textTransform: 'uppercase',
+          }}>
+            {todayFact.name}
+          </div>
+        )}
+
+        {/* Weather */}
+        {weather && !showLocationPrompt && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '13px',
+            color: '#888',
+          }}>
+            <span style={{ fontSize: '20px' }}>{weather.icon}</span>
+            <span>{weather.temp}°F</span>
+            <span style={{ color: '#666' }}>·</span>
+            <span>{weather.condition}</span>
+          </div>
+        )}
+      </div>
 
       {/* Speech Bubble Message (above Hagotchi) */}
       <div style={{
         position: 'relative',
         maxWidth: '320px',
         marginBottom: '16px',
-        marginTop: !weather || showLocationPrompt ? '16px' : '0',
       }}>
         {/* Bubble content */}
         <div style={{
