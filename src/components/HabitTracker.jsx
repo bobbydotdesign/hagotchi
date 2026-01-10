@@ -1714,7 +1714,7 @@ const HabitTracker = () => {
         zIndex: 999
       }} />
 
-      {/* Fixed Compact Header - Only visible when scrolled on mobile */}
+      {/* Fixed Header - Always visible on mobile */}
       <div
         className={isMobile ? 'mobile-header' : ''}
         style={{
@@ -1726,12 +1726,6 @@ const HabitTracker = () => {
           backgroundColor: '#0a0a0a',
           boxShadow: isMobile ? '0 4px 20px rgba(0,0,0,0.8)' : 'none',
           borderBottom: '1px solid #1a1a1a',
-          // Hide fixed header on mobile when not scrolled (hero is visible)
-          ...(isMobile && {
-            transform: headerCollapsed ? 'translateY(0)' : 'translateY(-100%)',
-            opacity: headerCollapsed ? 1 : 0,
-            transition: 'transform 0.25s ease, opacity 0.25s ease',
-          }),
         }}>
 
         {selectedView === 'today' && spirit && currentSkin ? (
@@ -1774,21 +1768,30 @@ const HabitTracker = () => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px',
+                      gap: headerCollapsed ? '8px' : '0px',
                       cursor: 'pointer',
                       padding: '4px 12px',
+                      transition: 'gap 0.25s ease',
                     }}
                   >
-                    <img
-                      src={currentSkin.image}
-                      alt={currentSkin.name}
-                      style={{
-                        width: '28px',
-                        height: '28px',
-                        imageRendering: 'pixelated',
-                        filter: 'drop-shadow(0 0 4px rgba(0,255,65,0.3))',
-                      }}
-                    />
+                    {/* Character slides in when CRT device scrolls out of view */}
+                    <div style={{
+                      width: headerCollapsed ? '28px' : '0px',
+                      height: '28px',
+                      overflow: 'hidden',
+                      transition: 'width 0.25s ease',
+                    }}>
+                      <img
+                        src={currentSkin.image}
+                        alt={currentSkin.name}
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          imageRendering: 'pixelated',
+                          filter: 'drop-shadow(0 0 4px rgba(0,255,65,0.3))',
+                        }}
+                      />
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       {[0, 1, 2].map(i => {
                         const hearts = getTotalHearts(completionPercent);
@@ -1988,111 +1991,15 @@ const HabitTracker = () => {
           paddingTop: 'env(safe-area-inset-top, 0px)',
         } : undefined}
       >
-        {/* EXPANDED HERO - Scrollable, shows at top before scrolling */}
+        {/* EXPANDED HERO - Scrollable CRT device, below fixed header */}
         {isMobile && selectedView === 'today' && spirit && currentSkin && (
           <div
             style={{
-              padding: '12px 0 16px',
+              paddingTop: '60px', // Space for fixed header
+              paddingBottom: '16px',
               position: 'relative',
-              marginBottom: '16px',
             }}
           >
-            {/* Top bar: Coins | Hearts | Menu */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '16px',
-            }}>
-              {/* Left: Coins */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '4px 10px',
-                backgroundColor: 'rgba(255, 170, 0, 0.08)',
-                border: '1px solid rgba(255, 170, 0, 0.2)',
-                borderRadius: '12px',
-              }}>
-                <span style={{ fontSize: '11px', color: '#ffaa00' }}>●</span>
-                <span style={{
-                  fontSize: '12px',
-                  color: '#ffaa00',
-                  fontWeight: 'bold',
-                  fontFamily: 'monospace',
-                }}>
-                  {spirit.coins || 0}
-                </span>
-              </div>
-
-              {/* Center: Hearts */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}>
-                {[0, 1, 2].map(i => {
-                  const hearts = getTotalHearts(completionPercent);
-                  const fill = Math.max(0, Math.min(1, hearts - i));
-                  const isFull = fill >= 1;
-                  const isEmpty = fill <= 0;
-                  const isPartiallyFilled = fill > 0 && fill < 1;
-
-                  return (
-                    <svg
-                      key={i}
-                      viewBox="0 0 24 22"
-                      style={{
-                        width: '20px',
-                        height: '18px',
-                        filter: isFull
-                          ? 'drop-shadow(0 0 4px rgba(0, 255, 65, 0.6))'
-                          : isPartiallyFilled
-                            ? 'drop-shadow(0 0 3px rgba(0, 255, 65, 0.4))'
-                            : 'none',
-                        transition: 'filter 0.3s ease',
-                      }}
-                    >
-                      <path
-                        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                        fill="none"
-                        stroke={isEmpty ? '#333' : '#00ff41'}
-                        strokeWidth="1.5"
-                      />
-                      <path
-                        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                        fill="#00ff41"
-                        style={{
-                          clipPath: `inset(${(1 - fill) * 100}% 0 0 0)`,
-                        }}
-                      />
-                    </svg>
-                  );
-                })}
-              </div>
-
-              {/* Right: Menu */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowMobileMenu(true);
-                }}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid #333',
-                  color: '#666',
-                  padding: '6px 10px',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  fontSize: '14px',
-                  lineHeight: 1,
-                  borderRadius: '4px',
-                }}
-              >
-                ⋮
-              </button>
-            </div>
-
             {/* CRT Device Frame */}
             <div style={{
               display: 'flex',
