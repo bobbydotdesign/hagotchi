@@ -45,7 +45,7 @@ body.mobile-view {
 
 /* Spacer to push content below fixed header */
 .mobile-header-spacer {
-  height: calc(135px + env(safe-area-inset-top, 0px));
+  height: calc(48px + env(safe-area-inset-top, 0px));
   flex-shrink: 0;
 }
 
@@ -60,7 +60,7 @@ body.mobile-view {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-  padding-top: calc(135px + env(safe-area-inset-top, 0px));
+  padding-top: calc(50px + env(safe-area-inset-top, 0px));
   padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
 }
 

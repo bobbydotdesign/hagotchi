@@ -164,44 +164,30 @@ const SkinCollection = ({
                   justifyContent: 'center',
                   marginBottom: '8px',
                 }}>
-                  {isUnlocked ? (
-                    <img
-                      src={skin.image}
-                      alt={displayName}
-                      style={{
-                        width: '48px',
-                        height: '48px',
-                        imageRendering: 'pixelated',
-                      }}
-                    />
-                  ) : (
-                    <div style={{
+                  <img
+                    src={skin.image}
+                    alt={isUnlocked ? displayName : skin.name}
+                    style={{
                       width: '48px',
                       height: '48px',
-                      backgroundColor: '#1a1a1a',
-                      border: '1px solid #333',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#444',
-                      fontSize: '20px',
-                    }}>
-                      ?
-                    </div>
-                  )}
+                      imageRendering: 'pixelated',
+                      filter: isUnlocked ? 'none' : 'grayscale(100%) brightness(0.3)',
+                      opacity: isUnlocked ? 1 : 0.5,
+                    }}
+                  />
                 </div>
 
                 {/* Skin Name */}
                 <div style={{
                   fontSize: '9px',
-                  color: isUnlocked ? '#fff' : '#666',
+                  color: isUnlocked ? '#fff' : '#444',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
                   textAlign: 'center',
                   width: '100%',
                 }}>
-                  {isUnlocked ? displayName : '???'}
+                  {isUnlocked ? displayName : skin.name}
                 </div>
 
                 {/* Rarity dot */}

@@ -4,7 +4,7 @@
   "webDir": "dist",
   "ios": {
     "scheme": "Hagotchi",
-    "contentInset": "automatic",
+    "contentInset": "never",
     "preferredContentMode": "mobile",
     "backgroundColor": "#0a0a0a",
     "scrollEnabled": true,

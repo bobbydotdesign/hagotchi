@@ -51,6 +51,27 @@ export const useHagotchi = (userId) => {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   const isInitialized = useRef(false);
+  const encouragementTimeoutRef = useRef(null);
+
+  // Auto-dismiss encouragement messages after 5 seconds
+  useEffect(() => {
+    if (encouragementMessage) {
+      // Clear any existing timeout
+      if (encouragementTimeoutRef.current) {
+        clearTimeout(encouragementTimeoutRef.current);
+      }
+      // Set new timeout to auto-dismiss
+      encouragementTimeoutRef.current = setTimeout(() => {
+        setEncouragementMessage(null);
+      }, 5000);
+    }
+
+    return () => {
+      if (encouragementTimeoutRef.current) {
+        clearTimeout(encouragementTimeoutRef.current);
+      }
+    };
+  }, [encouragementMessage]);
   const lastCompletionPercent = useRef(0);
 
   // Cache spirit data

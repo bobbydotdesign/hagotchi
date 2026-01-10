@@ -104,12 +104,10 @@ const LoreArchive = ({
 
               {/* Lore text */}
               <p style={{
-                fontSize: '11px',
+                fontSize: '14px',
                 color: '#999',
-                lineHeight: 1.7,
+                lineHeight: 1.6,
                 margin: 0,
-                paddingLeft: '8px',
-                borderLeft: '2px solid #333',
               }}>
                 {skin.loreText}
               </p>

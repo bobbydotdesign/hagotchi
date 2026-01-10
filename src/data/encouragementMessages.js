@@ -613,11 +613,45 @@ export const INTERACTION_MESSAGES = {
   },
 };
 
-// Get a random interaction message
+// Storage key for tracking shown messages
+const INTERACTION_INDEX_KEY = 'hagotchi_interaction_index_v1';
+
+// Get stored indices for message rotation
+const getStoredIndices = () => {
+  try {
+    const stored = localStorage.getItem(INTERACTION_INDEX_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+};
+
+// Save indices for message rotation
+const saveStoredIndices = (indices) => {
+  try {
+    localStorage.setItem(INTERACTION_INDEX_KEY, JSON.stringify(indices));
+  } catch {
+    // Ignore storage errors
+  }
+};
+
+// Get a rotating interaction message (cycles through all before repeating)
 export const getInteractionMessage = (type, personality) => {
   const messages = INTERACTION_MESSAGES[type]?.[personality];
   if (!messages?.length) return null;
-  return messages[Math.floor(Math.random() * messages.length)];
+
+  const key = `${type}_${personality}`;
+  const indices = getStoredIndices();
+
+  // Get next index (wrapping around)
+  const lastIndex = indices[key] ?? -1;
+  const nextIndex = (lastIndex + 1) % messages.length;
+
+  // Save the new index
+  indices[key] = nextIndex;
+  saveStoredIndices(indices);
+
+  return messages[nextIndex];
 };
 
 // Get heart milestone trigger

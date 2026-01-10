@@ -20,6 +20,13 @@ import {
   scheduleAllHabitNotifications,
   setupNotificationListeners
 } from '../services/notifications';
+import {
+  playStartupSound,
+  fadeOutStartupSound,
+  playClick,
+  playSuccess,
+  resumeAudio
+} from '../services/sounds';
 import { useHagotchi } from '../hooks/useHagotchi';
 import {
   SkinCollection,
@@ -111,6 +118,7 @@ const HabitTracker = () => {
   const [loadingDate, setLoadingDate] = useState(false);
   const [cursorBlink, setCursorBlink] = useState(true);
   const [bootSequence, setBootSequence] = useState(true);
+  const [bootStarted, setBootStarted] = useState(false);
   const [bootLine, setBootLine] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
@@ -510,7 +518,13 @@ const HabitTracker = () => {
     return () => clearInterval(blinkInterval);
   }, []);
 
+  // Note: Startup sound is played directly in the START button onClick handler
+  // iOS requires audio to be triggered directly from user gesture, not from useEffect
+
   useEffect(() => {
+    // Only run animation after user clicks START
+    if (!bootStarted) return;
+
     if (bootSequence && bootLine < bootMessages.length) {
       // Longer pause on "ready" line
       const isReadyLine = bootMessages[bootLine]?.includes('ready');
@@ -520,15 +534,20 @@ const HabitTracker = () => {
       }, delay);
       return () => clearTimeout(timer);
     } else if (bootLine >= bootMessages.length && !bootFading) {
-      // Start fade out
+      // Boot complete - play startup sound and fade out
       setBootFading(true);
+      playStartupSound();
+      // Fade out the startup sound after a short delay
+      setTimeout(() => {
+        fadeOutStartupSound(1500);
+      }, 500);
       setTimeout(() => {
         setBootSequence(false);
         // Hide native splash screen after boot animation
         hideSplashScreen();
       }, 800);
     }
-  }, [bootLine, bootSequence, bootFading]);
+  }, [bootLine, bootSequence, bootFading, bootStarted]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -1065,8 +1084,9 @@ const HabitTracker = () => {
     const habit = habits.find(h => h.id === id);
     if (!habit) return;
 
-    // Add haptic feedback
+    // Add haptic and audio feedback
     hapticMedium();
+    playClick();
 
     const dailyGoal = habit.daily_goal || 1;
 
@@ -1384,36 +1404,262 @@ const HabitTracker = () => {
         fontFamily: '"IBM Plex Mono", "Fira Code", "SF Mono", monospace',
         color: '#00ff41',
         padding: '40px',
+        paddingTop: `calc(40px + env(safe-area-inset-top, 0px))`,
+        paddingBottom: `calc(40px + env(safe-area-inset-bottom, 0px))`,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        flexDirection: 'column',
         opacity: bootFading ? 0 : 1,
         transition: 'opacity 0.6s ease-out',
+        position: 'relative',
       }}>
-        <div style={{ maxWidth: '600px', width: '100%' }}>
-          {bootMessages.slice(0, bootLine).map((msg, i) => {
-            const isReady = msg.includes('ready');
-            return (
-              <div key={i} style={{
-                marginBottom: '8px',
-                opacity: i < bootLine - 1 ? 0.5 : 1,
-                fontSize: '14px',
-                letterSpacing: '0.5px',
-                textShadow: isReady ? '0 0 10px #00ff41' : 'none',
+        {/* Boot text in top-right corner */}
+        {bootStarted && (
+          <div style={{
+            position: 'absolute',
+            top: `calc(40px + env(safe-area-inset-top, 0px))`,
+            right: '40px',
+            textAlign: 'right',
+            maxWidth: '300px',
+          }}>
+            {bootMessages.slice(0, bootLine).map((msg, i) => {
+              const isReady = msg.includes('ready');
+              return (
+                <div key={i} style={{
+                  marginBottom: '6px',
+                  opacity: i < bootLine - 1 ? 0.4 : 1,
+                  fontSize: '12px',
+                  letterSpacing: '0.5px',
+                  textShadow: isReady ? '0 0 10px #00ff41' : 'none',
+                }}>
+                  {isReady ? (
+                    <>
+                      {'> ready'}
+                      <span style={{ opacity: cursorBlink ? 1 : 0 }}>_</span>
+                    </>
+                  ) : msg}
+                </div>
+              );
+            })}
+            {bootLine < bootMessages.length && !bootMessages[bootLine - 1]?.includes('ready') && (
+              <span style={{ opacity: cursorBlink ? 1 : 0 }}>▌</span>
+            )}
+          </div>
+        )}
+
+        {/* Device-style START button - shown before boot starts */}
+        {!bootStarted && (
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontFamily: '"IBM Plex Mono", "Fira Code", "SF Mono", monospace',
+          }}>
+            {/* Device shell - matches CRT device aesthetic */}
+            <div style={{
+              backgroundColor: '#1a1a1a',
+              border: '2px solid #333',
+              borderRadius: '24px',
+              padding: '32px 40px',
+              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3)',
+            }}>
+              {/* HAGOTCHI label */}
+              <div style={{
+                textAlign: 'center',
+                marginBottom: '24px',
               }}>
-                {isReady ? (
-                  <>
-                    {'> ready'}
-                    <span style={{ opacity: cursorBlink ? 1 : 0 }}>_</span>
-                  </>
-                ) : msg}
+                <span style={{
+                  fontSize: '12px',
+                  color: '#00ff41',
+                  letterSpacing: '3px',
+                  fontWeight: 'bold',
+                  textShadow: '0 0 10px rgba(0,255,65,0.3)',
+                }}>
+                  HAGOTCHI
+                </span>
               </div>
-            );
-          })}
-          {bootLine < bootMessages.length && !bootMessages[bootLine - 1]?.includes('ready') && (
-            <span style={{ opacity: cursorBlink ? 1 : 0 }}>▌</span>
-          )}
-        </div>
+
+              {/* Toggle switch housing */}
+              <div
+                onClick={async () => {
+                  await resumeAudio();
+                  playClick();
+                  setBootStarted(true);
+                }}
+                style={{
+                  backgroundColor: '#0d0d0d',
+                  border: '3px solid #222',
+                  borderRadius: '12px',
+                  padding: '16px 20px',
+                  cursor: 'pointer',
+                  position: 'relative',
+                }}
+              >
+                {/* Switch track */}
+                <div style={{
+                  backgroundColor: '#050505',
+                  border: '2px solid #333',
+                  borderRadius: '8px',
+                  height: '120px',
+                  width: '70px',
+                  margin: '0 auto',
+                  position: 'relative',
+                  boxShadow: 'inset 0 4px 8px rgba(0,0,0,0.6)',
+                  overflow: 'hidden',
+                }}>
+                  {/* OFF label (top) */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    left: 0,
+                    right: 0,
+                    textAlign: 'center',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    letterSpacing: '1px',
+                    color: '#00ff41',
+                    opacity: 0.6,
+                    textShadow: '0 0 4px rgba(0,255,65,0.3)',
+                  }}>
+                    OFF
+                  </div>
+
+                  {/* ON label (bottom) */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '12px',
+                    left: 0,
+                    right: 0,
+                    textAlign: 'center',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    letterSpacing: '1px',
+                    color: '#00ff41',
+                    textShadow: '0 0 8px rgba(0,255,65,0.5)',
+                    animation: 'blink 1.5s ease-in-out infinite',
+                  }}>
+                    ON
+                  </div>
+
+                  {/* Switch paddle (in OFF position at top) */}
+                  <div
+                    className="switch-paddle"
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      left: '8px',
+                      right: '8px',
+                      height: '50px',
+                      backgroundColor: '#2a2a2a',
+                      border: '2px solid #444',
+                      borderRadius: '6px',
+                      boxShadow: '0 4px 0 #111, 0 6px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {/* Grip lines on paddle */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}>
+                      <div style={{ width: '24px', height: '2px', backgroundColor: '#444', borderRadius: '1px' }} />
+                      <div style={{ width: '24px', height: '2px', backgroundColor: '#444', borderRadius: '1px' }} />
+                      <div style={{ width: '24px', height: '2px', backgroundColor: '#444', borderRadius: '1px' }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Power indicator LED */}
+                <div style={{
+                  marginTop: '12px',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: '#00ff41',
+                    boxShadow: '0 0 8px rgba(0,255,65,0.6)',
+                    animation: 'blink 1s ease-in-out infinite',
+                  }} />
+                  <span style={{
+                    fontSize: '9px',
+                    color: '#666',
+                    letterSpacing: '1px',
+                  }}>
+                    POWER
+                  </span>
+                </div>
+              </div>
+
+              {/* Decorative screws */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: '20px',
+                padding: '0 4px',
+              }}>
+                <div style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: '#222',
+                  border: '1px solid #333',
+                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)',
+                  position: 'relative',
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%) rotate(45deg)',
+                    width: '6px',
+                    height: '1px',
+                    backgroundColor: '#444',
+                  }} />
+                </div>
+                <div style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: '#222',
+                  border: '1px solid #333',
+                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)',
+                  position: 'relative',
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%) rotate(-30deg)',
+                    width: '6px',
+                    height: '1px',
+                    backgroundColor: '#444',
+                  }} />
+                </div>
+              </div>
+            </div>
+
+            <style>{`
+              @keyframes blink {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.3; }
+              }
+              .switch-paddle:active {
+                top: 54px !important;
+                box-shadow: 0 2px 0 #111, 0 3px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+              }
+            `}</style>
+          </div>
+        )}
       </div>
     );
   }
@@ -1778,8 +2024,9 @@ const HabitTracker = () => {
                     <div style={{
                       width: headerCollapsed ? '28px' : '0px',
                       height: '28px',
-                      overflow: 'hidden',
+                      overflow: 'visible',
                       transition: 'width 0.25s ease',
+                      position: 'relative',
                     }}>
                       <img
                         src={currentSkin.image}
@@ -1789,8 +2036,66 @@ const HabitTracker = () => {
                           height: '28px',
                           imageRendering: 'pixelated',
                           filter: 'drop-shadow(0 0 4px rgba(0,255,65,0.3))',
+                          opacity: headerCollapsed ? 1 : 0,
+                          transition: 'opacity 0.25s ease',
                         }}
                       />
+                      {/* Encouragement bubble - aligned with character */}
+                      {encouragementMessage && headerCollapsed && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: '50%',
+                          transform: 'translateX(-30%)',
+                          marginTop: '8px',
+                          minWidth: '200px',
+                          maxWidth: '280px',
+                          padding: '8px 28px 8px 12px',
+                          backgroundColor: '#0a0a0a',
+                          border: '1px solid #00ff41',
+                          borderRadius: '6px',
+                          zIndex: 100,
+                          animation: 'headerFadeIn 0.3s ease-out',
+                          whiteSpace: 'normal',
+                        }}>
+                          <p style={{ fontSize: '12px', color: '#00ff41', margin: 0, lineHeight: 1.4 }}>
+                            "{encouragementMessage}"
+                          </p>
+                          {/* Dismiss X */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearEncouragement();
+                            }}
+                            style={{
+                              position: 'absolute',
+                              top: '2px',
+                              right: '4px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#00ff41',
+                              fontSize: '14px',
+                              cursor: 'pointer',
+                              padding: '2px 6px',
+                              lineHeight: 1,
+                              opacity: 0.6,
+                            }}
+                          >
+                            ×
+                          </button>
+                          {/* Speech bubble tail */}
+                          <div style={{
+                            position: 'absolute',
+                            top: '-5px',
+                            left: '20px',
+                            width: 0,
+                            height: 0,
+                            borderLeft: '5px solid transparent',
+                            borderRight: '5px solid transparent',
+                            borderBottom: '5px solid #00ff41',
+                          }} />
+                        </div>
+                      )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       {[0, 1, 2].map(i => {
@@ -1865,61 +2170,6 @@ const HabitTracker = () => {
                     </div>
                   )}
 
-                  {/* Encouragement bubble - compact, centered */}
-                  {encouragementMessage && headerCollapsed && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '100%',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      marginTop: '6px',
-                      maxWidth: 'calc(100% - 40px)',
-                      padding: '6px 28px 6px 10px',
-                      backgroundColor: '#0a0a0a',
-                      border: '1px solid #00ff41',
-                      borderRadius: '6px',
-                      zIndex: 100,
-                      animation: 'headerFadeIn 0.3s ease-out',
-                    }}>
-                      <p style={{ fontSize: '10px', color: '#00ff41', margin: 0, lineHeight: 1.3 }}>
-                        {encouragementMessage}
-                      </p>
-                      {/* Dismiss X */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          clearEncouragement();
-                        }}
-                        style={{
-                          position: 'absolute',
-                          top: '2px',
-                          right: '4px',
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#00ff41',
-                          fontSize: '14px',
-                          cursor: 'pointer',
-                          padding: '2px 6px',
-                          lineHeight: 1,
-                          opacity: 0.6,
-                        }}
-                      >
-                        ×
-                      </button>
-                      {/* Speech bubble tail - centered */}
-                      <div style={{
-                        position: 'absolute',
-                        top: '-5px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        width: 0,
-                        height: 0,
-                        borderLeft: '5px solid transparent',
-                        borderRight: '5px solid transparent',
-                        borderBottom: '5px solid #00ff41',
-                      }} />
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -1987,15 +2237,13 @@ const HabitTracker = () => {
         style={isMobile ? {
           paddingLeft: '20px',
           paddingRight: '20px',
-          // Override CSS padding-top - just safe area, Hagotchi at top
-          paddingTop: 'env(safe-area-inset-top, 0px)',
         } : undefined}
       >
         {/* EXPANDED HERO - Scrollable CRT device, below fixed header */}
         {isMobile && selectedView === 'today' && spirit && currentSkin && (
           <div
             style={{
-              paddingTop: '60px', // Space for fixed header
+              paddingTop: '20px',
               paddingBottom: '16px',
               position: 'relative',
             }}
@@ -2011,16 +2259,16 @@ const HabitTracker = () => {
                 backgroundColor: '#1a1a1a',
                 border: '2px solid #333',
                 borderRadius: '24px',
-                padding: '20px',
+                padding: '12px 20px 20px',
                 boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3)',
               }}>
                 {/* HAGOTCHI label above screen */}
                 <div style={{
                   textAlign: 'center',
-                  marginBottom: '12px',
+                  marginBottom: '8px',
                 }}>
                   <span style={{
-                    fontSize: '14px',
+                    fontSize: '12px',
                     color: '#00ff41',
                     letterSpacing: '3px',
                     fontWeight: 'bold',
@@ -2192,6 +2440,8 @@ const HabitTracker = () => {
                       key={btn.id}
                       onClick={(e) => {
                         e.stopPropagation();
+                        playClick();
+                        hapticLight();
                         if (btn.id === 'lore') {
                           setShowLoreArchive(true);
                         } else {
@@ -2255,7 +2505,11 @@ const HabitTracker = () => {
 
               {/* Cartridge sticking out the bottom - collection button */}
               <div
-                onClick={() => setShowSkinCollection(true)}
+                onClick={() => {
+                  playClick();
+                  hapticLight();
+                  setShowSkinCollection(true);
+                }}
                 style={{
                   width: '200px',
                   height: '32px',
